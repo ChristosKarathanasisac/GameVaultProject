@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj" />
+  <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalog.Application.csproj" />
+  <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj" />
+  <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj" />
+</Solution>

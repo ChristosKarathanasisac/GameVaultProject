@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj" />
+    <Project Path="GameVault.Catalog.Application/GameVault.Catalog.Application.csproj" />
+    <Project Path="GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj" />
+    <Project Path="GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+</Solution>
