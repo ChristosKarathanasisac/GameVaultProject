@@ -1,5 +1,19 @@
 services:
 
+  seq:
+    image: datalust/seq:latest
+    container_name: gamevault-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "5341:5341"   # ingestion (Serilog posts here)
+      - "5380:80"     # web UI  →  http://localhost:5380
+    volumes:
+      - seq-data:/data
+    networks:
+      - gamevault-network
+
   catalog-db:
     image: postgres:16
     container_name: gamevault-catalog-db
@@ -22,6 +36,7 @@ services:
 
 volumes:
   catalog-db-data:
+  seq-data:
 
 networks:
   gamevault-network:

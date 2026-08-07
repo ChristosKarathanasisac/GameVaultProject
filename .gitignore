@@ -364,4 +364,3 @@ FodyWeavers.xsd
 
 # Local secrets — never commit
 infra/.env
-src/**/appsettings.Development.json

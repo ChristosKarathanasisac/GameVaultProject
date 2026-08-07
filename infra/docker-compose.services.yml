@@ -11,6 +11,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CatalogDb: "Host=catalog-db;Port=5432;Database=${CATALOG_DB_NAME};Username=${CATALOG_DB_USER};Password=${CATALOG_DB_PASSWORD}"
+      # Override the Seq URL — inside Docker, "localhost" won't reach Seq; use the service name instead.
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
     depends_on:
       catalog-db:
         condition: service_healthy
