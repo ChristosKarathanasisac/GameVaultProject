@@ -1,0 +1,23 @@
+services:
+
+  catalog-api:
+    build:
+      context: ../src/Services/GameVault.Catalog
+      dockerfile: GameVault.Catalog.Api/Dockerfile
+    image: gamevault/catalog-api:latest
+    container_name: gamevault-catalog-api
+    ports:
+      - "5007:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CatalogDb: "Host=catalog-db;Port=5432;Database=${CATALOG_DB_NAME};Username=${CATALOG_DB_USER};Password=${CATALOG_DB_PASSWORD}"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    networks:
+      - gamevault-network
+
+networks:
+  gamevault-network:
+    name: gamevault-network
+    external: true
