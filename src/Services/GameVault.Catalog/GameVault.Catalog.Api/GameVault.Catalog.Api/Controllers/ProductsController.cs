@@ -18,7 +18,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getProductByIdHandler.HandleAsync(id, cancellationToken);
-
-        return result is null ? NotFound() : Ok(result);
+        return Ok(result);
     }
 }

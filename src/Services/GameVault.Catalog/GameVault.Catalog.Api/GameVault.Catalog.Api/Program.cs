@@ -1,6 +1,7 @@
 using GameVault.Catalog.Application;
 using GameVault.Catalog.Infrastructure;
 using GameVault.Catalog.Infrastructure.Persistence;
+using GameVault.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -21,6 +22,7 @@ try
     builder.Services.AddControllers();
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddExceptionHandling();
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
@@ -36,6 +38,7 @@ try
         app.MapOpenApi();
     }
 
+    app.UseExceptionHandling();
     app.UseSerilogRequestLogging();
 
     app.UseAuthorization();
@@ -49,6 +52,5 @@ catch (Exception ex)
 }
 finally
 {
-    // Flush any buffered log events before the process exits.
     await Log.CloseAndFlushAsync();
 }
