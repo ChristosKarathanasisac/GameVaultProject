@@ -6,4 +6,5 @@
     <Project Path="GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/" />
+  <Project Path="../../SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj" />
 </Solution>

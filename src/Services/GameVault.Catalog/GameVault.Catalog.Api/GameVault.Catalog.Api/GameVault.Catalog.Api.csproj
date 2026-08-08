@@ -17,6 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\SharedLibraries\GameVault.Common\GameVault.Contracts\GameVault.Contracts.csproj" />
+    <ProjectReference Include="..\..\GameVault.Catalog.Application\GameVault.Catalog.Application.csproj" />
     <ProjectReference Include="..\..\GameVault.Catalog.Infrastructure\GameVault.Catalog.Infrastructure.csproj" />
   </ItemGroup>
 

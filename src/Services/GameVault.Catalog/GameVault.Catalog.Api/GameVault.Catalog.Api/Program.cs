@@ -1,3 +1,4 @@
+using GameVault.Catalog.Application;
 using GameVault.Catalog.Infrastructure;
 using GameVault.Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ try
               .ReadFrom.Services(services));
 
     builder.Services.AddControllers();
+    builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddOpenApi();
 

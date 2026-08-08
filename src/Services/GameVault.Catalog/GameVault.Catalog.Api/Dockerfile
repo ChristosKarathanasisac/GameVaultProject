@@ -6,15 +6,16 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files first so Docker can cache the restore layer
-COPY ["GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj", "GameVault.Catalog.Api/GameVault.Catalog.Api/"]
-COPY ["GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj", "GameVault.Catalog.Infrastructure/"]
-COPY ["GameVault.Catalog.Application/GameVault.Catalog.Application.csproj", "GameVault.Catalog.Application/"]
-COPY ["GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj", "GameVault.Catalog.Domain/"]
-RUN dotnet restore "GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj"
+COPY ["Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/"]
+COPY ["Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/"]
+COPY ["Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalog.Application.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Application/"]
+COPY ["Services/GameVault.Catalog/GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Domain/"]
+COPY ["SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj", "SharedLibraries/GameVault.Common/GameVault.Contracts/"]
+RUN dotnet restore "Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj"
 
 # Copy the rest of the source and build
 COPY . .
-WORKDIR "/src/GameVault.Catalog.Api/GameVault.Catalog.Api"
+WORKDIR "/src/Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api"
 RUN dotnet build "GameVault.Catalog.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish
