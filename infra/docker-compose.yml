@@ -1,0 +1,44 @@
+services:
+
+  seq:
+    image: datalust/seq:latest
+    container_name: gamevault-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "5341:5341"   # ingestion (Serilog posts here)
+      - "5380:80"     # web UI  →  http://localhost:5380
+    volumes:
+      - seq-data:/data
+    networks:
+      - gamevault-network
+
+  catalog-db:
+    image: postgres:16
+    container_name: gamevault-catalog-db
+    environment:
+      POSTGRES_USER: ${CATALOG_DB_USER}
+      POSTGRES_PASSWORD: ${CATALOG_DB_PASSWORD}
+      POSTGRES_DB: ${CATALOG_DB_NAME}
+    ports:
+      - "${CATALOG_DB_PORT}:5432"
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CATALOG_DB_USER} -d ${CATALOG_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - gamevault-network
+
+volumes:
+  catalog-db-data:
+  seq-data:
+
+networks:
+  gamevault-network:
+    name: gamevault-network
+    driver: bridge

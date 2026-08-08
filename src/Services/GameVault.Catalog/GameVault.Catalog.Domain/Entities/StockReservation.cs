@@ -9,7 +9,6 @@ public sealed class StockReservation
     public Guid Id { get; private set; }
     public Guid ProductId { get; private set; }
 
-    // Cross-service reference — no real FK constraint in the DB
     public Guid OrderId { get; private set; }
 
     public int Quantity { get; private set; }

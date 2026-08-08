@@ -1,23 +1,56 @@
-var builder = WebApplication.CreateBuilder(args);
+using GameVault.Catalog.Application;
+using GameVault.Catalog.Infrastructure;
+using GameVault.Catalog.Infrastructure.Persistence;
+using GameVault.Core.Extensions;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 
-// Add services to the container.
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+try
 {
-    app.MapOpenApi();
+    Log.Information("Starting Catalog API");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((ctx, services, config) =>
+        config.ReadFrom.Configuration(ctx.Configuration)
+              .ReadFrom.Services(services));
+
+    builder.Services.AddControllers();
+    builder.Services.AddApplication();
+    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddExceptionHandling();
+    builder.Services.AddOpenApi();
+
+    var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        await db.Database.MigrateAsync();
+    }
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+    }
+
+    app.UseExceptionHandling();
+    app.UseSerilogRequestLogging();
+
+    app.UseAuthorization();
+    app.MapControllers();
+
+    app.Run();
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Catalog API terminated unexpectedly");
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}

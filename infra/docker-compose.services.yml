@@ -1,0 +1,26 @@
+services:
+
+  catalog-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Catalog/GameVault.Catalog.Api/Dockerfile
+    image: gamevault/catalog-api:latest
+    container_name: gamevault-catalog-api
+    ports:
+      - "5007:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CatalogDb: "Host=catalog-db;Port=5432;Database=${CATALOG_DB_NAME};Username=${CATALOG_DB_USER};Password=${CATALOG_DB_PASSWORD}"
+      # Override the Seq URL — inside Docker, "localhost" won't reach Seq; use the service name instead.
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    networks:
+      - gamevault-network
+
+networks:
+  gamevault-network:
+    name: gamevault-network
+    external: true

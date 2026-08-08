@@ -1,1 +1,13 @@
-<Solution />
+<Solution>
+  <Folder Name="/Catalog/">
+    <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj" />
+    <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalog.Application.csproj" />
+    <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj" />
+    <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/SharedLibraries/">
+    <Project Path="src/SharedLibraries/GameVault.Common/GameVault.Common/GameVault.Common.csproj" />
+    <Project Path="src/SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj" />
+    <Project Path="src/SharedLibraries/GameVault.Common/GameVault.Core/GameVault.Core.csproj" />
+  </Folder>
+</Solution>
