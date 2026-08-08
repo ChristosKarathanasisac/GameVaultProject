@@ -2,8 +2,8 @@ services:
 
   catalog-api:
     build:
-      context: ../src/Services/GameVault.Catalog
-      dockerfile: GameVault.Catalog.Api/Dockerfile
+      context: ../src
+      dockerfile: Services/GameVault.Catalog/GameVault.Catalog.Api/Dockerfile
     image: gamevault/catalog-api:latest
     container_name: gamevault-catalog-api
     ports:
