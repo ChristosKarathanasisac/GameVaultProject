@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="GameVault.WebEdge.Api/GameVault.WebEdge.Api.csproj" />
+  </Folder>
+</Solution>

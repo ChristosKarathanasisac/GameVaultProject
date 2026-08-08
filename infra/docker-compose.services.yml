@@ -20,6 +20,24 @@ services:
     networks:
       - gamevault-network
 
+  webedge-api:
+    build:
+      context: ../src
+      dockerfile: Gateway/GameVault.WebEdge.Api/Dockerfile
+    image: gamevault/webedge-api:latest
+    container_name: gamevault-webedge-api
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address: "http://catalog-api:8080/"
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      - catalog-api
+    networks:
+      - gamevault-network
+
 networks:
   gamevault-network:
     name: gamevault-network
