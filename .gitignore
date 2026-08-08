@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Local secrets — never commit
 infra/.env
+
+# Claude Ai
+CLAUDE.md
