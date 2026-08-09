@@ -20,6 +20,31 @@ services:
     networks:
       - gamevault-network
 
+  customer-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Customer/GameVault.Customer.Api/Dockerfile
+    image: gamevault/customer-api:latest
+    container_name: gamevault-customer-api
+    ports:
+      - "5008:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CustomerDb: "Host=customer-db;Port=5432;Database=${CUSTOMER_DB_NAME};Username=${CUSTOMER_DB_USER};Password=${CUSTOMER_DB_PASSWORD}"
+      Authentication__Authority: "${KEYCLOAK_AUTHORITY}"
+      Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
+      Keycloak__BaseUrl: "${KEYCLOAK_BASE_URL}"
+      Keycloak__Realm: "${KEYCLOAK_REALM}"
+      Keycloak__AdminClientId: "${KEYCLOAK_ADMIN_CLIENT_ID}"
+      Keycloak__AdminClientSecret: "${KEYCLOAK_ADMIN_CLIENT_SECRET}"
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      customer-db:
+        condition: service_healthy
+    networks:
+      - gamevault-network
+
   webedge-api:
     build:
       context: ../src
@@ -31,10 +56,12 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address: "http://catalog-api:8080/"
+      ReverseProxy__Clusters__customer-cluster__Destinations__destination1__Address: "http://customer-api:8080/"
       Serilog__WriteTo__1__Name: "Seq"
       Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
     depends_on:
       - catalog-api
+      - customer-api
     networks:
       - gamevault-network
 

@@ -14,6 +14,26 @@ services:
     networks:
       - gamevault-network
 
+  customer-db:
+    image: postgres:16
+    container_name: gamevault-customer-db
+    environment:
+      POSTGRES_USER: ${CUSTOMER_DB_USER}
+      POSTGRES_PASSWORD: ${CUSTOMER_DB_PASSWORD}
+      POSTGRES_DB: ${CUSTOMER_DB_NAME}
+    ports:
+      - "${CUSTOMER_DB_PORT}:5432"
+    volumes:
+      - customer-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CUSTOMER_DB_USER} -d ${CUSTOMER_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - gamevault-network
+
   catalog-db:
     image: postgres:16
     container_name: gamevault-catalog-db
@@ -36,6 +56,7 @@ services:
 
 volumes:
   catalog-db-data:
+  customer-db-data:
   seq-data:
 
 networks:
