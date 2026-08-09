@@ -10,11 +10,12 @@ COPY ["Services/GameVault.Customer/GameVault.Customer.Api/GameVault.Customer.Api
 COPY ["Services/GameVault.Customer/GameVault.Customer.Infrastructure/GameVault.Customer.Infrastructure.csproj", "Services/GameVault.Customer/GameVault.Customer.Infrastructure/"]
 COPY ["Services/GameVault.Customer/GameVault.Customer.Application/GameVault.Customer.Application.csproj", "Services/GameVault.Customer/GameVault.Customer.Application/"]
 COPY ["Services/GameVault.Customer/GameVault.Customer.Domain/GameVault.Customer.Domain.csproj", "Services/GameVault.Customer/GameVault.Customer.Domain/"]
-COPY ["SharedLibraries/GameVault.Common/GameVault.Common/GameVault.Common.csproj", "SharedLibraries/GameVault.Common/GameVault.Common/"]
 COPY ["SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj", "SharedLibraries/GameVault.Common/GameVault.Contracts/"]
 COPY ["SharedLibraries/GameVault.Common/GameVault.Core/GameVault.Core.csproj", "SharedLibraries/GameVault.Common/GameVault.Core/"]
 COPY ["SharedLibraries/GameVault.Common/GameVault.SharedKernel/GameVault.SharedKernel.csproj", "SharedLibraries/GameVault.Common/GameVault.SharedKernel/"]
-RUN dotnet restore "Services/GameVault.Customer/GameVault.Customer.Api/GameVault.Customer.Api/GameVault.Customer.Api.csproj"
+COPY ["NuGet.Config", "."]
+RUN --mount=type=cache,id=nuget-customer,target=/root/.nuget/packages \
+    dotnet restore "Services/GameVault.Customer/GameVault.Customer.Api/GameVault.Customer.Api/GameVault.Customer.Api.csproj"
 
 # Copy the rest of the source and build
 COPY . .

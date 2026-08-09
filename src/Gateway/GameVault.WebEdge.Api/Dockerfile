@@ -6,7 +6,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY ["Gateway/GameVault.WebEdge.Api/GameVault.WebEdge.Api.csproj", "Gateway/GameVault.WebEdge.Api/"]
-RUN dotnet restore "Gateway/GameVault.WebEdge.Api/GameVault.WebEdge.Api.csproj"
+COPY ["NuGet.Config", "."]
+RUN --mount=type=cache,id=nuget-webedge,target=/root/.nuget/packages \
+    dotnet restore "Gateway/GameVault.WebEdge.Api/GameVault.WebEdge.Api.csproj"
 
 COPY . .
 WORKDIR "/src/Gateway/GameVault.WebEdge.Api"

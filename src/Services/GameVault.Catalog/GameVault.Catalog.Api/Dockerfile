@@ -10,10 +10,11 @@ COPY ["Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/Ga
 COPY ["Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/"]
 COPY ["Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalog.Application.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Application/"]
 COPY ["Services/GameVault.Catalog/GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Domain/"]
-COPY ["SharedLibraries/GameVault.Common/GameVault.Common/GameVault.Common.csproj", "SharedLibraries/GameVault.Common/GameVault.Common/"]
 COPY ["SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj", "SharedLibraries/GameVault.Common/GameVault.Contracts/"]
 COPY ["SharedLibraries/GameVault.Common/GameVault.Core/GameVault.Core.csproj", "SharedLibraries/GameVault.Common/GameVault.Core/"]
-RUN dotnet restore "Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj"
+COPY ["NuGet.Config", "."]
+RUN --mount=type=cache,id=nuget-catalog,target=/root/.nuget/packages \
+    dotnet restore "Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj"
 
 # Copy the rest of the source and build
 COPY . .
