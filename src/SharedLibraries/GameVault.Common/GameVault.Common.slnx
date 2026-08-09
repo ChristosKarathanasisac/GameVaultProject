@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="GameVault.Common/GameVault.Common.csproj" />
   <Project Path="GameVault.Contracts/GameVault.Contracts.csproj" />
   <Project Path="GameVault.Core/GameVault.Core.csproj" />
+  <Project Path="GameVault.SharedKernel/GameVault.SharedKernel.csproj" />
 </Solution>

@@ -1,4 +1,4 @@
-namespace GameVault.Common.Exceptions;
+namespace GameVault.SharedKernel.Exceptions;
 
 public abstract class DomainException : Exception
 {

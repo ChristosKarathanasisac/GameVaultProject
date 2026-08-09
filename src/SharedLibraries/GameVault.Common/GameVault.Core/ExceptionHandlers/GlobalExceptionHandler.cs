@@ -1,4 +1,4 @@
-using GameVault.Common.Exceptions;
+using GameVault.SharedKernel.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

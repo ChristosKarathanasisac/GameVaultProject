@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../GameVault.Common/GameVault.Common.csproj" />
+    <ProjectReference Include="../GameVault.SharedKernel/GameVault.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>
