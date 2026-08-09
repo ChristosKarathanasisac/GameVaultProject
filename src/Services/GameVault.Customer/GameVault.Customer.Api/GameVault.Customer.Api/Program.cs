@@ -32,6 +32,7 @@ try
         {
             options.Authority = builder.Configuration["Authentication:Authority"];
             options.Audience = builder.Configuration["Authentication:Audience"];
+            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         });
 
     builder.Services.AddAuthorization();
