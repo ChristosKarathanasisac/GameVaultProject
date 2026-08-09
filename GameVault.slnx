@@ -1,5 +1,7 @@
 <Solution>
-  <Folder Name="/Gateway/" />
+  <Folder Name="/Gateway/">
+    <Project Path="src/Gateway/GameVault.WebEdge.Api/GameVault.WebEdge.Api.csproj" />
+  </Folder>
   <Folder Name="/Catalog/">
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj" />
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalog.Application.csproj" />
