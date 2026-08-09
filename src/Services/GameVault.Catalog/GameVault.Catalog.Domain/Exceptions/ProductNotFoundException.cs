@@ -1,4 +1,4 @@
-using GameVault.Common.Exceptions;
+using GameVault.SharedKernel.Exceptions;
 
 namespace GameVault.Catalog.Domain.Exceptions;
 

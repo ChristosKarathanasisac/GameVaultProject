@@ -1,10 +1,9 @@
-using System.Security.Claims;
 using GameVault.Contracts.Requests.Customer;
+using GameVault.Core.Extensions;
 using GameVault.Customer.Application.Customers.Delete;
 using GameVault.Customer.Application.Customers.GetById;
 using GameVault.Customer.Application.Customers.Register;
 using GameVault.Customer.Application.Customers.Update;
-using GameVault.SharedKernel.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,8 +13,6 @@ namespace GameVault.Customer.Api.Controllers;
 [Route("[controller]")]
 public class CustomersController : ControllerBase
 {
-    private const string SubClaimType = "sub";
-
     private readonly IRegisterCustomerHandler _registerHandler;
     private readonly IGetCustomerByIdHandler _getByIdHandler;
     private readonly IUpdateCustomerHandler _updateHandler;
@@ -38,11 +35,7 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterCustomerRequest request, CancellationToken cancellationToken)
     {
         var result = await _registerHandler.HandleAsync(request, cancellationToken);
-
-        if (result.IsFailure)
-            return MapError(result.Error);
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value }, null);
+        return result.ToActionResult(id => CreatedAtAction(nameof(GetById), new { id }, null));
     }
 
     [HttpGet("{id:guid}")]
@@ -50,90 +43,42 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getByIdHandler.HandleAsync(id, cancellationToken);
-
-        if (result.IsFailure)
-            return MapError(result.Error);
-
-        return Ok(result.Value);
+        return result.ToActionResult(Ok);
     }
 
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
-        var callerId = GetCallerId();
+        var callerId = User.GetUserId();
         if (callerId is null)
             return Unauthorized();
 
         var result = await _getByIdHandler.HandleAsync(callerId.Value, cancellationToken);
-
-        if (result.IsFailure)
-            return MapError(result.Error);
-
-        return Ok(result.Value);
+        return result.ToActionResult(Ok);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCustomerRequest request, CancellationToken cancellationToken)
     {
-        var callerId = GetCallerId();
+        var callerId = User.GetUserId();
         if (callerId is null)
             return Unauthorized();
 
         var result = await _updateHandler.HandleAsync(id, callerId.Value, request, cancellationToken);
-
-        if (result.IsFailure)
-            return MapError(result.Error);
-
-        return NoContent();
+        return result.ToActionResult(_ => NoContent());
     }
 
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var callerId = GetCallerId();
+        var callerId = User.GetUserId();
         if (callerId is null)
             return Unauthorized();
 
         var result = await _deleteHandler.HandleAsync(id, callerId.Value, cancellationToken);
-
-        if (result.IsFailure)
-            return MapError(result.Error);
-
-        return NoContent();
+        return result.ToActionResult(_ => NoContent());
     }
-
-    private Guid? GetCallerId()
-    {
-        var sub = User.FindFirstValue(SubClaimType)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        return Guid.TryParse(sub, out var id) ? id : null;
-    }
-
-    private IActionResult MapError(Error error) => error.Type switch
-    {
-        ErrorType.NotFound => NotFound(new ProblemDetails
-        {
-            Title = error.Description,
-            Detail = error.Code
-        }),
-        ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
-        {
-            Title = error.Description,
-            Detail = error.Code
-        }),
-        ErrorType.Conflict => Conflict(new ProblemDetails
-        {
-            Title = error.Description,
-            Detail = error.Code
-        }),
-        _ => StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails
-        {
-            Title = error.Description,
-            Detail = error.Code
-        })
-    };
 }

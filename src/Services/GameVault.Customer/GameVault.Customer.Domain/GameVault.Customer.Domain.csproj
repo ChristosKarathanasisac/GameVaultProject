@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../SharedLibraries/GameVault.Common/GameVault.Common/GameVault.Common.csproj" />
     <ProjectReference Include="../../../SharedLibraries/GameVault.Common/GameVault.SharedKernel/GameVault.SharedKernel.csproj" />
   </ItemGroup>
 
