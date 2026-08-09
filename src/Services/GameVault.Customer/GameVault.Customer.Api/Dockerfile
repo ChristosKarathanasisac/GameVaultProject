@@ -20,10 +20,12 @@ RUN --mount=type=cache,id=nuget-customer,target=/root/.nuget/packages \
 # Copy the rest of the source and build
 COPY . .
 WORKDIR "/src/Services/GameVault.Customer/GameVault.Customer.Api/GameVault.Customer.Api"
-RUN dotnet build "GameVault.Customer.Api.csproj" -c Release -o /app/build
+RUN --mount=type=cache,id=nuget-customer,target=/root/.nuget/packages \
+    dotnet build "GameVault.Customer.Api.csproj" -c Release -o /app/build --no-restore
 
 FROM build AS publish
-RUN dotnet publish "GameVault.Customer.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN --mount=type=cache,id=nuget-customer,target=/root/.nuget/packages \
+    dotnet publish "GameVault.Customer.Api.csproj" -c Release -o /app/publish --no-restore /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

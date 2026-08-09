@@ -12,10 +12,12 @@ RUN --mount=type=cache,id=nuget-webedge,target=/root/.nuget/packages \
 
 COPY . .
 WORKDIR "/src/Gateway/GameVault.WebEdge.Api"
-RUN dotnet build "GameVault.WebEdge.Api.csproj" -c Release -o /app/build
+RUN --mount=type=cache,id=nuget-webedge,target=/root/.nuget/packages \
+    dotnet build "GameVault.WebEdge.Api.csproj" -c Release -o /app/build --no-restore
 
 FROM build AS publish
-RUN dotnet publish "GameVault.WebEdge.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN --mount=type=cache,id=nuget-webedge,target=/root/.nuget/packages \
+    dotnet publish "GameVault.WebEdge.Api.csproj" -c Release -o /app/publish --no-restore /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

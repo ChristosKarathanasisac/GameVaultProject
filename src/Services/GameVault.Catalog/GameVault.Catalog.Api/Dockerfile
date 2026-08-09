@@ -12,6 +12,7 @@ COPY ["Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalo
 COPY ["Services/GameVault.Catalog/GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj", "Services/GameVault.Catalog/GameVault.Catalog.Domain/"]
 COPY ["SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj", "SharedLibraries/GameVault.Common/GameVault.Contracts/"]
 COPY ["SharedLibraries/GameVault.Common/GameVault.Core/GameVault.Core.csproj", "SharedLibraries/GameVault.Common/GameVault.Core/"]
+COPY ["SharedLibraries/GameVault.Common/GameVault.SharedKernel/GameVault.SharedKernel.csproj", "SharedLibraries/GameVault.Common/GameVault.SharedKernel/"]
 COPY ["NuGet.Config", "."]
 RUN --mount=type=cache,id=nuget-catalog,target=/root/.nuget/packages \
     dotnet restore "Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api/GameVault.Catalog.Api.csproj"
@@ -19,10 +20,12 @@ RUN --mount=type=cache,id=nuget-catalog,target=/root/.nuget/packages \
 # Copy the rest of the source and build
 COPY . .
 WORKDIR "/src/Services/GameVault.Catalog/GameVault.Catalog.Api/GameVault.Catalog.Api"
-RUN dotnet build "GameVault.Catalog.Api.csproj" -c Release -o /app/build
+RUN --mount=type=cache,id=nuget-catalog,target=/root/.nuget/packages \
+    dotnet build "GameVault.Catalog.Api.csproj" -c Release -o /app/build --no-restore
 
 FROM build AS publish
-RUN dotnet publish "GameVault.Catalog.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN --mount=type=cache,id=nuget-catalog,target=/root/.nuget/packages \
+    dotnet publish "GameVault.Catalog.Api.csproj" -c Release -o /app/publish --no-restore /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
