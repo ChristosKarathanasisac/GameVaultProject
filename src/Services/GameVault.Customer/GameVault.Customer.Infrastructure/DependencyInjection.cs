@@ -1,3 +1,4 @@
+using GameVault.Core.Dapr;
 using GameVault.Customer.Application.Abstractions;
 using GameVault.Customer.Infrastructure.Keycloak;
 using GameVault.Customer.Infrastructure.Persistence;
@@ -24,7 +25,10 @@ public static class DependencyInjection
         services.Configure<KeycloakOptions>(options =>
             configuration.GetSection(KeycloakOptions.SectionName).Bind(options));
         services.AddDaprClient();
-        services.AddScoped<IKeycloakAdminClient, KeycloakAdminClient>();
+        services.AddTransient<DaprInvocationHandler>();
+        services.AddHttpClient<IKeycloakAdminClient, KeycloakAdminClient>(client =>
+            client.BaseAddress = new Uri($"http://{KeycloakOptions.EndpointName}"))
+            .AddHttpMessageHandler<DaprInvocationHandler>();
 
         return services;
     }

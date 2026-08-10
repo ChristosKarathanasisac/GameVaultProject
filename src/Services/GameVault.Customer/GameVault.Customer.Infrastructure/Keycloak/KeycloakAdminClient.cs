@@ -17,15 +17,14 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
     private readonly KeycloakOptions _options;
     private readonly DaprClient _daprClient;
 
-    private const string KeycloakAppId = "keycloak";
     private const string AdminClientIdKey = "keycloak-admin-client-id";
     private const string AdminClientSecretKey = "keycloak-admin-client-secret";
 
-    public KeycloakAdminClient(IOptions<KeycloakOptions> options, DaprClient daprClient)
+    public KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakOptions> options, DaprClient daprClient)
     {
+        _httpClient = httpClient;
         _options = options.Value;
         _daprClient = daprClient;
-        _httpClient = DaprClient.CreateInvokeHttpClient(KeycloakAppId);
     }
 
     public async Task<Result<Guid>> CreateUserAsync(
