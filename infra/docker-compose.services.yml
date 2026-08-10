@@ -6,8 +6,6 @@ services:
       dockerfile: Services/GameVault.Catalog/GameVault.Catalog.Api/Dockerfile
     image: gamevault/catalog-api:latest
     container_name: gamevault-catalog-api
-    ports:
-      - "5007:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CatalogDb: "Host=catalog-db;Port=5432;Database=${CATALOG_DB_NAME};Username=${CATALOG_DB_USER};Password=${CATALOG_DB_PASSWORD}"
@@ -26,8 +24,6 @@ services:
       dockerfile: Services/GameVault.Customer/GameVault.Customer.Api/Dockerfile
     image: gamevault/customer-api:latest
     container_name: gamevault-customer-api
-    ports:
-      - "5008:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CustomerDb: "Host=customer-db;Port=5432;Database=${CUSTOMER_DB_NAME};Username=${CUSTOMER_DB_USER};Password=${CUSTOMER_DB_PASSWORD}"
