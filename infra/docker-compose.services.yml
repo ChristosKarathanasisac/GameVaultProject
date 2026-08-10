@@ -85,6 +85,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address: "http://catalog-api:8080/"
       ReverseProxy__Clusters__customer-cluster__Destinations__destination1__Address: "http://customer-api:8080/"
+      Authentication__Authority: "${KEYCLOAK_AUTHORITY}"
+      Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
       Keycloak__BaseUrl: "${KEYCLOAK_BASE_URL}"
       Keycloak__Realm: "${KEYCLOAK_REALM}"
       Serilog__WriteTo__1__Name: "Seq"

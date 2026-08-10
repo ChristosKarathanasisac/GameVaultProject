@@ -1,3 +1,4 @@
+using GameVault.Core.Extensions;
 using Serilog;
 using Yarp.ReverseProxy.Configuration;
 
@@ -17,6 +18,8 @@ try
 
     var keycloakBaseUrl = builder.Configuration["Keycloak:BaseUrl"];
     var keycloakRealm = builder.Configuration["Keycloak:Realm"];
+
+    builder.Services.AddKeycloakAuthentication(builder.Configuration, builder.Environment);
 
     builder.Services.AddReverseProxy()
         .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -53,6 +56,9 @@ try
     var app = builder.Build();
 
     app.UseSerilogRequestLogging();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     app.MapReverseProxy();
 

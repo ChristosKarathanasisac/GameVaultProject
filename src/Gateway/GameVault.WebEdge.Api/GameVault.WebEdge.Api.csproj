@@ -12,4 +12,8 @@
     <PackageReference Include="Yarp.ReverseProxy" Version="2.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\SharedLibraries\GameVault.Common\GameVault.Core\GameVault.Core.csproj" />
+  </ItemGroup>
+
 </Project>

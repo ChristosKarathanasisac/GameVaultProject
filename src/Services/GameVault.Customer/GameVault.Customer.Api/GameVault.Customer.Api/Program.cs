@@ -2,7 +2,6 @@ using GameVault.Customer.Application;
 using GameVault.Customer.Infrastructure;
 using GameVault.Customer.Infrastructure.Persistence;
 using GameVault.Core.Extensions;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -26,16 +25,7 @@ try
     builder.Services.AddExceptionHandling();
     builder.Services.AddOpenApi();
 
-    builder.Services
-        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.Authority = builder.Configuration["Authentication:Authority"];
-            options.Audience = builder.Configuration["Authentication:Audience"];
-            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-        });
-
-    builder.Services.AddAuthorization();
+    builder.Services.AddKeycloakAuthentication(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
 
