@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Dapr.Client;
+using GameVault.Core.Dapr;
 using GameVault.Customer.Application.Abstractions;
 using GameVault.Customer.Application.Errors;
 using GameVault.SharedKernel.Results;
@@ -13,11 +15,17 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 {
     private readonly HttpClient _httpClient;
     private readonly KeycloakOptions _options;
+    private readonly DaprClient _daprClient;
 
-    public KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakOptions> options)
+    private const string KeycloakAppId = "keycloak";
+    private const string AdminClientIdKey = "keycloak-admin-client-id";
+    private const string AdminClientSecretKey = "keycloak-admin-client-secret";
+
+    public KeycloakAdminClient(IOptions<KeycloakOptions> options, DaprClient daprClient)
     {
-        _httpClient = httpClient;
         _options = options.Value;
+        _daprClient = daprClient;
+        _httpClient = DaprClient.CreateInvokeHttpClient(KeycloakAppId);
     }
 
     public async Task<Result<Guid>> CreateUserAsync(
@@ -31,7 +39,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
         var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"{_options.BaseUrl}/admin/realms/{_options.Realm}/users");
+            $"/admin/realms/{_options.Realm}/users");
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Content = JsonContent.Create(new
@@ -66,7 +74,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
         var request = new HttpRequestMessage(
             HttpMethod.Delete,
-            $"{_options.BaseUrl}/admin/realms/{_options.Realm}/users/{userId}");
+            $"/admin/realms/{_options.Realm}/users/{userId}");
 
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -76,15 +84,23 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
     private async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken)
     {
+        var clientIdTask = _daprClient.GetSecretAsync(
+            DaprConsts.SecretStoreName, AdminClientIdKey, cancellationToken: cancellationToken);
+
+        var clientSecretTask = _daprClient.GetSecretAsync(
+            DaprConsts.SecretStoreName, AdminClientSecretKey, cancellationToken: cancellationToken);
+
+        await Task.WhenAll(clientIdTask, clientSecretTask);
+
         var content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "client_credentials",
-            ["client_id"] = _options.AdminClientId,
-            ["client_secret"] = _options.AdminClientSecret
+            ["client_id"] = clientIdTask.Result[AdminClientIdKey],
+            ["client_secret"] = clientSecretTask.Result[AdminClientSecretKey]
         });
 
         var response = await _httpClient.PostAsync(
-            $"{_options.BaseUrl}/realms/{_options.Realm}/protocol/openid-connect/token",
+            $"/realms/{_options.Realm}/protocol/openid-connect/token",
             content,
             cancellationToken);
 

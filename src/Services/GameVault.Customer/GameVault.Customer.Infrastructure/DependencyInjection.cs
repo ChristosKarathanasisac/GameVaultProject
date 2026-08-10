@@ -23,7 +23,7 @@ public static class DependencyInjection
 
         services.Configure<KeycloakOptions>(options =>
             configuration.GetSection(KeycloakOptions.SectionName).Bind(options));
-        services.AddSingleton<HttpClient>();
+        services.AddDaprClient();
         services.AddScoped<IKeycloakAdminClient, KeycloakAdminClient>();
 
         return services;
