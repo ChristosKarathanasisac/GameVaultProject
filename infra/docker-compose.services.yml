@@ -28,8 +28,6 @@ services:
     container_name: gamevault-customer-api
     ports:
       - "5008:8080"
-      - "3500:3500"   # Dapr HTTP (sidecar shares this network namespace)
-      - "50001:50001" # Dapr gRPC
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CustomerDb: "Host=customer-db;Port=5432;Database=${CUSTOMER_DB_NAME};Username=${CUSTOMER_DB_USER};Password=${CUSTOMER_DB_PASSWORD}"
