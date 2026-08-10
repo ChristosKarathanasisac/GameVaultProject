@@ -74,11 +74,33 @@ services:
     networks:
       - gamevault-network
 
+  dapr-placement:
+    image: daprio/placement:1.17.12
+    container_name: gamevault-dapr-placement
+    command: ["./placement", "--port", "50006", "--log-level", "info"]
+    ports:
+      - "50006:50006"
+    networks:
+      - gamevault-network
+
+  dapr-scheduler:
+    image: daprio/scheduler:1.17.12
+    container_name: gamevault-dapr-scheduler
+    command: ["./scheduler", "--port", "50007", "--etcd-data-dir", "/data"]
+    user: root
+    ports:
+      - "50007:50007"
+    volumes:
+      - dapr-etcd-data:/data
+    networks:
+      - gamevault-network
+
 volumes:
   catalog-db-data:
   customer-db-data:
   keycloak-data:
   seq-data:
+  dapr-etcd-data:
 
 networks:
   gamevault-network:

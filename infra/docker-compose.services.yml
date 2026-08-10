@@ -28,6 +28,8 @@ services:
     container_name: gamevault-customer-api
     ports:
       - "5008:8080"
+      - "3500:3500"   # Dapr HTTP (sidecar shares this network namespace)
+      - "50001:50001" # Dapr gRPC
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CustomerDb: "Host=customer-db;Port=5432;Database=${CUSTOMER_DB_NAME};Username=${CUSTOMER_DB_USER};Password=${CUSTOMER_DB_PASSWORD}"
@@ -44,6 +46,37 @@ services:
         condition: service_healthy
     networks:
       - gamevault-network
+
+  customer-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-customer-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - customer-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      - customer-api
+    network_mode: "service:customer-api"
 
   webedge-api:
     build:
