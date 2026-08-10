@@ -7,6 +7,7 @@ using GameVault.Core.Dapr;
 using GameVault.Customer.Application.Abstractions;
 using GameVault.Customer.Application.Errors;
 using GameVault.SharedKernel.Results;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace GameVault.Customer.Infrastructure.Keycloak;
@@ -16,15 +17,19 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
     private readonly HttpClient _httpClient;
     private readonly KeycloakOptions _options;
     private readonly DaprClient _daprClient;
+    private readonly IMemoryCache _cache;
 
     private const string AdminClientIdKey = "keycloak-admin-client-id";
     private const string AdminClientSecretKey = "keycloak-admin-client-secret";
+    private const string AdminTokenCacheKey = "keycloak-admin-token";
+    private static readonly TimeSpan TokenCacheDuration = TimeSpan.FromSeconds(50);
 
-    public KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakOptions> options, DaprClient daprClient)
+    public KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakOptions> options, DaprClient daprClient, IMemoryCache cache)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _daprClient = daprClient;
+        _cache = cache;
     }
 
     public async Task<Result<Guid>> CreateUserAsync(
@@ -83,6 +88,9 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
     private async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken)
     {
+        if (_cache.TryGetValue(AdminTokenCacheKey, out string? cached))
+            return cached!;
+
         var clientIdTask = _daprClient.GetSecretAsync(
             DaprConsts.SecretStoreName, AdminClientIdKey, cancellationToken: cancellationToken);
 
@@ -106,6 +114,10 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-        return json.GetProperty("access_token").GetString()!;
+        var token = json.GetProperty("access_token").GetString()!;
+
+        _cache.Set(AdminTokenCacheKey, token, TokenCacheDuration);
+
+        return token;
     }
 }

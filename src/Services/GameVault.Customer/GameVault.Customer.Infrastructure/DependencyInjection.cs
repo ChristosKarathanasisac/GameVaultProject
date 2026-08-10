@@ -24,6 +24,7 @@ public static class DependencyInjection
 
         services.Configure<KeycloakOptions>(options =>
             configuration.GetSection(KeycloakOptions.SectionName).Bind(options));
+        services.AddMemoryCache();
         services.AddDaprClient();
         services.AddTransient<DaprInvocationHandler>();
         services.AddHttpClient<IKeycloakAdminClient, KeycloakAdminClient>(client =>
