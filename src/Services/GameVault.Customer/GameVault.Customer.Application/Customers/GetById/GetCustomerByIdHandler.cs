@@ -14,9 +14,12 @@ public sealed class GetCustomerByIdHandler : IGetCustomerByIdHandler
         _repository = repository;
     }
 
-    public async Task<Result<CustomerResponse>> HandleAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<CustomerResponse>> HandleAsync(Guid routeId, Guid callerId, CancellationToken cancellationToken = default)
     {
-        var customer = await _repository.GetByIdAsync(id, cancellationToken);
+        if (routeId != callerId)
+            return CustomerErrors.Forbidden;
+
+        var customer = await _repository.GetByIdAsync(routeId, cancellationToken);
 
         if (customer is null)
             return CustomerErrors.NotFound;

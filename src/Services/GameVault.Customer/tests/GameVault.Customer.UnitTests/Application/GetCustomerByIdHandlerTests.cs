@@ -18,12 +18,30 @@ public sealed class GetCustomerByIdHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ReturnsForbidden_WhenCallerIsNotResourceOwner()
+    {
+        var result = await _handler.HandleAsync(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(CustomerErrors.Forbidden, result.Error);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NeverQueriesRepository_WhenCallerIsNotResourceOwner()
+    {
+        await _handler.HandleAsync(Guid.NewGuid(), Guid.NewGuid());
+
+        await _repository.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+    }
+
+    [Fact]
     public async Task HandleAsync_ReturnsNotFound_WhenCustomerDoesNotExist()
     {
-        _repository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        var id = Guid.NewGuid();
+        _repository.GetByIdAsync(id, Arg.Any<CancellationToken>())
             .Returns((CustomerEntity?)null);
 
-        var result = await _handler.HandleAsync(Guid.NewGuid());
+        var result = await _handler.HandleAsync(id, id);
 
         Assert.True(result.IsFailure);
         Assert.Equal(CustomerErrors.NotFound, result.Error);
@@ -37,7 +55,7 @@ public sealed class GetCustomerByIdHandlerTests
         _repository.GetByIdAsync(id, Arg.Any<CancellationToken>())
             .Returns(customer);
 
-        var result = await _handler.HandleAsync(id);
+        var result = await _handler.HandleAsync(id, id);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(id, result.Value.Id);
@@ -56,7 +74,7 @@ public sealed class GetCustomerByIdHandlerTests
         _repository.GetByIdAsync(id, Arg.Any<CancellationToken>())
             .Returns(customer);
 
-        var result = await _handler.HandleAsync(id);
+        var result = await _handler.HandleAsync(id, id);
 
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value.PhoneNumber);

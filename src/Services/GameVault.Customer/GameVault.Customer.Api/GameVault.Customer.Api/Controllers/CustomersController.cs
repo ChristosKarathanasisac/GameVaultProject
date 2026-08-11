@@ -42,7 +42,11 @@ public class CustomersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _getByIdHandler.HandleAsync(id, cancellationToken);
+        var callerId = User.GetUserId();
+        if (callerId is null)
+            return Unauthorized();
+
+        var result = await _getByIdHandler.HandleAsync(id, callerId.Value, cancellationToken);
         return result.ToActionResult(Ok);
     }
 
@@ -54,7 +58,7 @@ public class CustomersController : ControllerBase
         if (callerId is null)
             return Unauthorized();
 
-        var result = await _getByIdHandler.HandleAsync(callerId.Value, cancellationToken);
+        var result = await _getByIdHandler.HandleAsync(callerId.Value, callerId.Value, cancellationToken);
         return result.ToActionResult(Ok);
     }
 

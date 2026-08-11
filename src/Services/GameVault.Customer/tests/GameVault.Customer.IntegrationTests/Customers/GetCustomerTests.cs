@@ -31,9 +31,10 @@ public sealed class GetCustomerTests : IAsyncLifetime
     [Fact]
     public async Task GetById_Returns404_WhenCustomerDoesNotExist()
     {
-        var client = _factory.CreateAuthenticatedClient(Guid.NewGuid());
+        var nonExistentId = Guid.NewGuid();
+        var client = _factory.CreateAuthenticatedClient(nonExistentId);
 
-        var response = await client.GetAsync($"/customers/{Guid.NewGuid()}");
+        var response = await client.GetAsync($"/customers/{nonExistentId}");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -55,6 +56,17 @@ public sealed class GetCustomerTests : IAsyncLifetime
         Assert.Equal("Alice", body.FirstName);
         Assert.Equal("Smith", body.LastName);
         Assert.Equal("+1234567890", body.PhoneNumber);
+    }
+
+    [Fact]
+    public async Task GetById_Returns403_WhenCallerIsNotOwner()
+    {
+        var customerId = await _factory.SeedCustomerAsync();
+        var client = _factory.CreateAuthenticatedClient(Guid.NewGuid());
+
+        var response = await client.GetAsync($"/customers/{customerId}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

@@ -5,5 +5,5 @@ namespace GameVault.Customer.Application.Customers.GetById;
 
 public interface IGetCustomerByIdHandler
 {
-    Task<Result<CustomerResponse>> HandleAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<CustomerResponse>> HandleAsync(Guid routeId, Guid callerId, CancellationToken cancellationToken = default);
 }
