@@ -13,6 +13,7 @@
     <Project Path="src/Services/GameVault.Customer/GameVault.Customer.Application/GameVault.Customer.Application.csproj" />
     <Project Path="src/Services/GameVault.Customer/GameVault.Customer.Domain/GameVault.Customer.Domain.csproj" />
     <Project Path="src/Services/GameVault.Customer/GameVault.Customer.Infrastructure/GameVault.Customer.Infrastructure.csproj" />
+    <Project Path="src/Services/GameVault.Customer/tests/GameVault.Customer.UnitTests/GameVault.Customer.UnitTests.csproj" />
   </Folder>
   <Folder Name="/SharedLibraries/">
     <Project Path="src/SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj" />
