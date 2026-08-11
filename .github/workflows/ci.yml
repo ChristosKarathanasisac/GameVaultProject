@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+    branches: [master, dev]
+
+jobs:
+  unit-tests:
+    name: Build & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          # .NET 10 is in preview until November 2025 GA
+          dotnet-quality: 'preview'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore GameVault.slnx
+
+      - name: Build
+        run: dotnet build GameVault.slnx --configuration Release --no-restore
+
+      - name: Unit Tests
+        run: |
+          for proj in $(find . -name "*.UnitTests.csproj"); do
+            dotnet test "$proj" --configuration Release --no-build --logger "trx;LogFileName=unit-results.trx"
+          done
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: '**/*.trx'
+          if-no-files-found: ignore
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore GameVault.slnx
+
+      - name: Build
+        run: dotnet build GameVault.slnx --configuration Release --no-restore
+
+      - name: Integration Tests
+        run: |
+          for proj in $(find . -name "*.IntegrationTests.csproj"); do
+            dotnet test "$proj" --configuration Release --no-build --logger "trx;LogFileName=integration-results.trx"
+          done
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: '**/*.trx'
+          if-no-files-found: ignore
