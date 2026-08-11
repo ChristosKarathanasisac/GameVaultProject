@@ -8,10 +8,12 @@ namespace GameVault.Customer.Application.Customers.Delete;
 public sealed class DeleteCustomerHandler : IDeleteCustomerHandler
 {
     private readonly ICustomerRepository _repository;
+    private readonly IKeycloakAdminClient _keycloakClient;
 
-    public DeleteCustomerHandler(ICustomerRepository repository)
+    public DeleteCustomerHandler(ICustomerRepository repository, IKeycloakAdminClient keycloakClient)
     {
         _repository = repository;
+        _keycloakClient = keycloakClient;
     }
 
     public async Task<Result<Unit>> HandleAsync(Guid routeId, Guid callerId, CancellationToken cancellationToken = default)
@@ -23,6 +25,9 @@ public sealed class DeleteCustomerHandler : IDeleteCustomerHandler
 
         if (customer is null)
             return CustomerErrors.NotFound;
+
+        
+        await _keycloakClient.DeleteUserAsync(routeId, cancellationToken);
 
         customer.SoftDelete();
 

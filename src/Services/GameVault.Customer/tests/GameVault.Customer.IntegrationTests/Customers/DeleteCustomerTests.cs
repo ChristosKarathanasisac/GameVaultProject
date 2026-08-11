@@ -1,5 +1,6 @@
 using System.Net;
 using GameVault.Customer.IntegrationTests.Fixtures;
+using NSubstitute;
 
 namespace GameVault.Customer.IntegrationTests.Customers;
 
@@ -35,6 +36,17 @@ public sealed class DeleteCustomerTests : IAsyncLifetime
         var response = await client.DeleteAsync($"/customers/{customerId}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_DeletesKeycloakUser_WhenOwnerDeletesOwnProfile()
+    {
+        var customerId = await _factory.SeedCustomerAsync();
+        var client = _factory.CreateAuthenticatedClient(customerId);
+
+        await client.DeleteAsync($"/customers/{customerId}");
+
+        await _factory.KeycloakMock.Received(1).DeleteUserAsync(customerId, Arg.Any<CancellationToken>());
     }
 
     [Fact]

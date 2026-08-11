@@ -83,6 +83,10 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return;
+
         response.EnsureSuccessStatusCode();
     }
 

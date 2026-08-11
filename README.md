@@ -46,6 +46,16 @@ Shared building blocks live in `src/SharedLibraries/GameVault.Common`:
 | `GameVault.Catalog.Api` | `5007` | Game catalog management |
 | `GameVault.Customer.Api` | `5008` | Customer management, Keycloak integration |
 
+## Cross-Service Consistency
+
+There is no distributed transaction across a service's own database and another service/system it depends on, so each such reference documents its own idempotency and compensation strategy explicitly (per repo convention — see `StockReservation.OrderId` in Catalog for the DB-level example).
+
+### Customer ↔ Keycloak (identity)
+
+- **Register**: the Keycloak user is created first, then the local `Customer` row is written. If the local write fails after Keycloak succeeded, the handler compensates by deleting the just-created Keycloak user before rethrowing. Keycloak's own email-uniqueness rejection (409) is surfaced as an expected `EmailConflict` result, not an exception.
+- **Delete**: the Keycloak user is deleted first, then the local row is soft-deleted. If the Keycloak call fails, nothing is written locally — the customer stays active on both sides rather than ending up soft-deleted locally while still able to authenticate via Keycloak. `DeleteUserAsync` treats an already-deleted (404) Keycloak user as success, so a retried delete request can still complete the local write.
+- **Known gap**: in the narrow window where the Keycloak deletion succeeds but the subsequent local `SaveChangesAsync` fails (DB unavailable, concurrency conflict), the customer can no longer authenticate but the local record still shows active. This is retry-safe (the Keycloak call is idempotent) but not automatically reconciled today. Permanently closing this window requires an outbox pattern — a durable "pending Keycloak deletion" record written in the same local transaction, processed by a background worker with retries — which is not yet implemented and is tracked as a follow-up.
+
 ## Tech Stack
 
 | Concern | Choice |
