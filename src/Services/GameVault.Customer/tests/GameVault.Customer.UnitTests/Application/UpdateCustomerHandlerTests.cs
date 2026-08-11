@@ -2,6 +2,7 @@ using GameVault.Contracts.Requests.Customer;
 using GameVault.Customer.Application.Abstractions;
 using GameVault.Customer.Application.Customers.Update;
 using GameVault.Customer.Application.Errors;
+using GameVault.SharedKernel.Results;
 using NSubstitute;
 using CustomerEntity = global::GameVault.Customer.Domain.Entities.Customer;
 
@@ -30,6 +31,43 @@ public sealed class UpdateCustomerHandlerTests
     public async Task HandleAsync_NeverQueriesRepository_WhenCallerIsNotResourceOwner()
     {
         await _handler.HandleAsync(Guid.NewGuid(), Guid.NewGuid(), AnyRequest());
+
+        await _repository.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+    }
+
+    [Theory]
+    [InlineData("", "Smith")]
+    [InlineData("Alice", "")]
+    public async Task HandleAsync_ReturnsValidationFailure_WhenNameFieldsAreInvalid(string firstName, string lastName)
+    {
+        var id = Guid.NewGuid();
+        var request = new UpdateCustomerRequest(firstName, lastName, null);
+
+        var result = await _handler.HandleAsync(id, id, request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ReturnsValidationFailure_WhenPhoneNumberExceedsMaxLength()
+    {
+        var id = Guid.NewGuid();
+        var request = new UpdateCustomerRequest("Alice", "Smith", new string('1', 31));
+
+        var result = await _handler.HandleAsync(id, id, request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NeverQueriesRepository_WhenValidationFails()
+    {
+        var id = Guid.NewGuid();
+        var request = new UpdateCustomerRequest("", "Smith", null);
+
+        await _handler.HandleAsync(id, id, request);
 
         await _repository.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
     }

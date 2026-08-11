@@ -22,6 +22,7 @@ public static class ResultExtensions
             ErrorType.NotFound => new NotFoundObjectResult(problem),
             ErrorType.Forbidden => new ObjectResult(problem) { StatusCode = StatusCodes.Status403Forbidden },
             ErrorType.Conflict => new ConflictObjectResult(problem),
+            ErrorType.Validation => new BadRequestObjectResult(problem),
             _ => new ObjectResult(problem) { StatusCode = StatusCodes.Status500InternalServerError }
         };
     }

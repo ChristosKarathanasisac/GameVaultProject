@@ -47,6 +47,59 @@ public sealed class RegisterCustomerHandlerTests
         await _repository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData("", "S3cr3t!1", "Alice", "Smith")]
+    [InlineData("not-an-email", "S3cr3t!1", "Alice", "Smith")]
+    [InlineData("alice@example.com", "short", "Alice", "Smith")]
+    [InlineData("alice@example.com", "S3cr3t!1", "", "Smith")]
+    [InlineData("alice@example.com", "S3cr3t!1", "Alice", "")]
+    public async Task HandleAsync_ReturnsValidationFailure_ForInvalidRequests(
+        string email, string password, string firstName, string lastName)
+    {
+        var request = new RegisterCustomerRequest(email, password, firstName, lastName, null);
+
+        var result = await _handler.HandleAsync(request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ReturnsValidationFailure_WhenNameExceedsMaxLength()
+    {
+        var request = new RegisterCustomerRequest(
+            "alice@example.com", "S3cr3t!1", new string('A', 101), "Smith", null);
+
+        var result = await _handler.HandleAsync(request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ReturnsValidationFailure_WhenPhoneNumberExceedsMaxLength()
+    {
+        var request = new RegisterCustomerRequest(
+            "alice@example.com", "S3cr3t!1", "Alice", "Smith", new string('1', 31));
+
+        var result = await _handler.HandleAsync(request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NeverCallsKeycloakOrRepository_WhenValidationFails()
+    {
+        var request = new RegisterCustomerRequest("", "S3cr3t!1", "Alice", "Smith", null);
+
+        await _handler.HandleAsync(request);
+
+        await _keycloak.DidNotReceiveWithAnyArgs()
+            .CreateUserAsync(default!, default!, default!, default!, default);
+        await _repository.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
+    }
+
     [Fact]
     public async Task HandleAsync_ReturnsEmailConflict_WhenKeycloakRejectsEmail()
     {
@@ -103,5 +156,5 @@ public sealed class RegisterCustomerHandlerTests
     }
 
     private static RegisterCustomerRequest ValidRequest() =>
-        new("alice@example.com", "S3cr3t!", "Alice", "Smith", null);
+        new("alice@example.com", "S3cr3t!1", "Alice", "Smith", null);
 }

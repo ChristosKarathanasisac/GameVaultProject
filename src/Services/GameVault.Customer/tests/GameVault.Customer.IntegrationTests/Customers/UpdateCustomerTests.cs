@@ -44,6 +44,19 @@ public sealed class UpdateCustomerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Update_Returns400_WhenFirstNameIsEmpty()
+    {
+        var customerId = await _factory.SeedCustomerAsync("alice@example.com", "Alice", "Smith");
+        var client = _factory.CreateAuthenticatedClient(customerId);
+
+        var response = await client.PutAsJsonAsync(
+            $"/customers/{customerId}",
+            new UpdateCustomerRequest("", "Jones", null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Update_Returns403_WhenCallerIsNotOwner()
     {
         var customerId = await _factory.SeedCustomerAsync();

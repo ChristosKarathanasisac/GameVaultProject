@@ -20,6 +20,14 @@ public sealed class UpdateCustomerHandler : IUpdateCustomerHandler
         if (routeId != callerId)
             return CustomerErrors.Forbidden;
 
+        var validationError =
+            CustomerRequestValidation.ValidateName(request.FirstName, "FirstName") ??
+            CustomerRequestValidation.ValidateName(request.LastName, "LastName") ??
+            CustomerRequestValidation.ValidatePhoneNumber(request.PhoneNumber);
+
+        if (validationError is not null)
+            return validationError;
+
         var customer = await _repository.GetByIdAsync(routeId, cancellationToken);
 
         if (customer is null)

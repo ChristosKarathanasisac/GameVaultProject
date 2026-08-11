@@ -37,11 +37,32 @@ public sealed class RegisterCustomerTests : IAsyncLifetime
             .ReturnsForAnyArgs(Result<Guid>.Success(keycloakId));
 
         var response = await _client.PostAsJsonAsync("/customers/register",
-            new RegisterCustomerRequest("alice@example.com", "S3cr3t!", "Alice", "Smith", null));
+            new RegisterCustomerRequest("alice@example.com", "S3cr3t!1", "Alice", "Smith", null));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains(keycloakId.ToString(), response.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task Register_Returns400_WhenEmailIsInvalid()
+    {
+        var response = await _client.PostAsJsonAsync("/customers/register",
+            new RegisterCustomerRequest("not-an-email", "S3cr3t!1", "Alice", "Smith", null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await _factory.KeycloakMock
+            .DidNotReceiveWithAnyArgs()
+            .CreateUserAsync(default!, default!, default!, default!, default);
+    }
+
+    [Fact]
+    public async Task Register_Returns400_WhenPasswordIsTooShort()
+    {
+        var response = await _client.PostAsJsonAsync("/customers/register",
+            new RegisterCustomerRequest("alice@example.com", "short", "Alice", "Smith", null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -52,7 +73,7 @@ public sealed class RegisterCustomerTests : IAsyncLifetime
             .ReturnsForAnyArgs(Result<Guid>.Failure(CustomerErrors.EmailConflict));
 
         var response = await _client.PostAsJsonAsync("/customers/register",
-            new RegisterCustomerRequest("duplicate@example.com", "S3cr3t!", "Alice", "Smith", null));
+            new RegisterCustomerRequest("duplicate@example.com", "S3cr3t!1", "Alice", "Smith", null));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
@@ -70,7 +91,7 @@ public sealed class RegisterCustomerTests : IAsyncLifetime
             .ReturnsForAnyArgs(Result<Guid>.Success(Guid.NewGuid()));
 
         var response = await _client.PostAsJsonAsync("/customers/register",
-            new RegisterCustomerRequest("alice@example.com", "S3cr3t!", "Alice", "Smith", null));
+            new RegisterCustomerRequest("alice@example.com", "S3cr3t!1", "Alice", "Smith", null));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }

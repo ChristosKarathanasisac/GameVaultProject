@@ -18,6 +18,16 @@ public sealed class RegisterCustomerHandler : IRegisterCustomerHandler
 
     public async Task<Result<Guid>> HandleAsync(RegisterCustomerRequest request, CancellationToken cancellationToken = default)
     {
+        var validationError =
+            CustomerRequestValidation.ValidateEmail(request.Email) ??
+            CustomerRequestValidation.ValidatePassword(request.Password) ??
+            CustomerRequestValidation.ValidateName(request.FirstName, "FirstName") ??
+            CustomerRequestValidation.ValidateName(request.LastName, "LastName") ??
+            CustomerRequestValidation.ValidatePhoneNumber(request.PhoneNumber);
+
+        if (validationError is not null)
+            return validationError;
+
         var keycloakResult = await _keycloakClient.CreateUserAsync(
             request.Email,
             request.Password,
