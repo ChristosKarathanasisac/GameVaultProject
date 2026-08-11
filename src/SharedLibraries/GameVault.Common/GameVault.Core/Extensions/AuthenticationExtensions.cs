@@ -24,10 +24,7 @@ public static class AuthenticationExtensions
                 options.RequireHttpsMetadata = !environment.IsDevelopment();
             });
 
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy(Policies.CustomerOnly, p => p.RequireRole("customer"));
-        });
+        services.AddAuthorization();
 
         services.AddScoped<IClaimsTransformation, KeycloakClaimsTransformation>();
 

@@ -50,18 +50,6 @@ public class CustomersController : ControllerBase
         return result.ToActionResult(Ok);
     }
 
-    [HttpGet("me")]
-    [Authorize]
-    public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
-    {
-        var callerId = User.GetUserId();
-        if (callerId is null)
-            return Unauthorized();
-
-        var result = await _getByIdHandler.HandleAsync(callerId.Value, callerId.Value, cancellationToken);
-        return result.ToActionResult(Ok);
-    }
-
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCustomerRequest request, CancellationToken cancellationToken)

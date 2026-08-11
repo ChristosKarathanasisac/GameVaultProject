@@ -81,19 +81,4 @@ public sealed class GetCustomerTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-
-    [Fact]
-    public async Task GetMe_Returns200_WithAuthenticatedUsersData()
-    {
-        var customerId = await _factory.SeedCustomerAsync("me@example.com", "Own", "Profile");
-        var client = _factory.CreateAuthenticatedClient(customerId);
-
-        var response = await client.GetAsync("/customers/me");
-        var body = await response.Content.ReadFromJsonAsync<CustomerResponse>();
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(body);
-        Assert.Equal(customerId, body.Id);
-        Assert.Equal("me@example.com", body.Email);
-    }
 }
