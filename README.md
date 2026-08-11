@@ -56,7 +56,7 @@ Shared building blocks live in `src/SharedLibraries/GameVault.Common`:
 | Inter-service comms | DAPR 1.17 (sidecar model) |
 | Identity | Keycloak 26.2 (OIDC / JWT Bearer) |
 | Logging | Serilog → Seq |
-| Testing | xUnit + NSubstitute |
+| Testing | xUnit + NSubstitute + Testcontainers |
 
 ## Infrastructure
 
@@ -100,6 +100,27 @@ GameVaultEnviroment/
 ```
 
 `GameVault.Catalog` is the canonical template service. Any new service must mirror its structure and conventions.
+
+## Testing
+
+Each service has two test projects under `tests/`:
+
+| Project | Scope | Key dependencies |
+|---|---|---|
+| `*.UnitTests` | Domain invariants, Application handler logic | xUnit + NSubstitute |
+| `*.IntegrationTests` | HTTP contracts, DB filters, EF configuration | xUnit + NSubstitute + WebApplicationFactory + Testcontainers (PostgreSQL) |
+
+**Running unit tests** (no Docker required):
+```bash
+dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.UnitTests
+```
+
+**Running integration tests** (Docker Desktop must be running):
+```bash
+dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.IntegrationTests
+```
+
+Integration tests spin up a dedicated PostgreSQL container per test run, apply migrations automatically, and tear the container down when done. See `CLAUDE.md §7b` for the full authoring guide.
 
 ## Configuration
 
