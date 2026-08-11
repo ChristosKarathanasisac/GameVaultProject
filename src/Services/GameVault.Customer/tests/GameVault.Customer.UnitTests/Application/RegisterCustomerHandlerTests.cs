@@ -114,6 +114,20 @@ public sealed class RegisterCustomerHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ReturnsValidationFailure_WhenKeycloakRejectsRegistration()
+    {
+        var request = ValidRequest();
+        _keycloak.CreateUserAsync(default!, default!, default!, default!, default)
+            .ReturnsForAnyArgs(Result<Guid>.Failure(
+                CustomerErrors.RegistrationRejectedByKeycloak("Password policy not met")));
+
+        var result = await _handler.HandleAsync(request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.Error.Type);
+    }
+
+    [Fact]
     public async Task HandleAsync_NeverTouchesRepository_WhenKeycloakFails()
     {
         var request = ValidRequest();

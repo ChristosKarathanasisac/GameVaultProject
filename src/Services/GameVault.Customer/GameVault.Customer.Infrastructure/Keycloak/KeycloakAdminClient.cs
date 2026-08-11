@@ -22,6 +22,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
     private const string AdminClientIdKey = "keycloak-admin-client-id";
     private const string AdminClientSecretKey = "keycloak-admin-client-secret";
     private const string AdminTokenCacheKey = "keycloak-admin-token";
+    private const string DefaultRejectionMessage = "Keycloak rejected the registration request.";
     private static readonly TimeSpan TokenCacheDuration = TimeSpan.FromSeconds(50);
 
     public KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakOptions> options, DaprClient daprClient, IMemoryCache cache)
@@ -64,12 +65,34 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         if (response.StatusCode == HttpStatusCode.Conflict)
             return CustomerErrors.EmailConflict;
 
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var detail = await ReadKeycloakErrorMessageAsync(response, cancellationToken);
+            return CustomerErrors.RegistrationRejectedByKeycloak(detail);
+        }
+
         response.EnsureSuccessStatusCode();
 
         var location = response.Headers.Location!.ToString();
         var userId = Guid.Parse(location.Split('/').Last());
 
         return userId;
+    }
+
+    private static async Task<string> ReadKeycloakErrorMessageAsync(
+        HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+            if (json.TryGetProperty("errorMessage", out var errorMessage))
+                return errorMessage.GetString() ?? DefaultRejectionMessage;
+        }
+        catch (JsonException)
+        {
+        }
+
+        return DefaultRejectionMessage;
     }
 
     public async Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)

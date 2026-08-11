@@ -24,4 +24,7 @@ public static class CustomerErrors
 
     public static Error WeakPassword(int minLength) =>
         Error.Validation("Customer.Validation.WeakPassword", $"Password must be at least {minLength} characters long.");
+
+    public static Error RegistrationRejectedByKeycloak(string detail) =>
+        Error.Validation("Customer.Validation.KeycloakRejected", detail);
 }
