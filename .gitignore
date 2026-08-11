@@ -369,3 +369,4 @@ infra/dapr/secrets.json
 # Claude Ai
 CLAUDE.md
 TargetState.md
+HighLevelDesign.canvas
