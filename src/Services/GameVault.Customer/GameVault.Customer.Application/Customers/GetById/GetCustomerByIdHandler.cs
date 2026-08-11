@@ -2,7 +2,6 @@ using GameVault.Contracts.Responses.Customer;
 using GameVault.Customer.Application.Abstractions;
 using GameVault.Customer.Application.Errors;
 using GameVault.SharedKernel.Results;
-using CustomerEntity = global::GameVault.Customer.Domain.Entities.Customer;
 
 namespace GameVault.Customer.Application.Customers.GetById;
 

@@ -23,6 +23,7 @@ try
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddExceptionHandling();
+    builder.Services.AddCorrelationId();
     builder.Services.AddOpenApi();
 
     builder.Services.AddKeycloakAuthentication(builder.Configuration, builder.Environment);
@@ -41,6 +42,7 @@ try
     }
 
     app.UseExceptionHandling();
+    app.UseCorrelationId();
     app.UseSerilogRequestLogging();
 
     app.UseAuthentication();

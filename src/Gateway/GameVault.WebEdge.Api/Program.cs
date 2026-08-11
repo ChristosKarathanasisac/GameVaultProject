@@ -20,6 +20,7 @@ try
     var keycloakRealm = builder.Configuration["Keycloak:Realm"];
 
     builder.Services.AddKeycloakAuthentication(builder.Configuration, builder.Environment);
+    builder.Services.AddCorrelationId();
 
     builder.Services.AddReverseProxy()
         .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -55,6 +56,7 @@ try
 
     var app = builder.Build();
 
+    app.UseCorrelationId();
     app.UseSerilogRequestLogging();
 
     app.UseAuthentication();
