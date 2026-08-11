@@ -13,8 +13,8 @@ public static class ResultExtensions
 
         var problem = new ProblemDetails
         {
-            Title = result.Error.Description,
-            Detail = result.Error.Code
+            Title = result.Error.Code,
+            Detail = result.Error.Description
         };
 
         return result.Error.Type switch
