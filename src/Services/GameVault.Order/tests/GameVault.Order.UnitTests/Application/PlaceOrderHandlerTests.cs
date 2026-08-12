@@ -16,12 +16,13 @@ public sealed class PlaceOrderHandlerTests
 {
     private readonly IOrderRepository _orderRepository = Substitute.For<IOrderRepository>();
     private readonly ICatalogClient _catalogClient = Substitute.For<ICatalogClient>();
+    private readonly IOrderCompensationService _compensationService = Substitute.For<IOrderCompensationService>();
     private readonly ILogger<PlaceOrderHandler> _logger = Substitute.For<ILogger<PlaceOrderHandler>>();
     private readonly PlaceOrderHandler _handler;
 
     public PlaceOrderHandlerTests()
     {
-        _handler = new PlaceOrderHandler(_orderRepository, _catalogClient, _logger);
+        _handler = new PlaceOrderHandler(_orderRepository, _catalogClient, _compensationService, _logger);
     }
 
     // ── Validation ────────────────────────────────────────────────────────────
@@ -172,8 +173,9 @@ public sealed class PlaceOrderHandlerTests
         SetupSuccessfulReservation(product1Id);
         _catalogClient.ReserveStockAsync(product2Id, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(Result<ReservationResponse>.Failure(Error.Conflict("x", "y")));
-        _catalogClient.ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>())
-            .Returns(Result<Unit>.Success(Unit.Value));
+        _compensationService
+            .ReleaseReservationsAsync(Arg.Any<Guid>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(true);
 
         var command = new PlaceOrderCommand(
             Guid.NewGuid(),
@@ -186,7 +188,7 @@ public sealed class PlaceOrderHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_ReleasesSuccessfulReservations_WhenOneFails()
+    public async Task HandleAsync_CallsCompensationService_WithOnlySuccessfullyReservedProducts()
     {
         var (product1Id, product2Id) = (Guid.NewGuid(), Guid.NewGuid());
         SetupSuccessfulProduct(product1Id);
@@ -194,8 +196,9 @@ public sealed class PlaceOrderHandlerTests
         SetupSuccessfulReservation(product1Id);
         _catalogClient.ReserveStockAsync(product2Id, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(Result<ReservationResponse>.Failure(Error.Conflict("x", "y")));
-        _catalogClient.ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>())
-            .Returns(Result<Unit>.Success(Unit.Value));
+        _compensationService
+            .ReleaseReservationsAsync(Arg.Any<Guid>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(true);
 
         var command = new PlaceOrderCommand(
             Guid.NewGuid(),
@@ -203,98 +206,35 @@ public sealed class PlaceOrderHandlerTests
 
         await _handler.HandleAsync(command);
 
-        await _catalogClient.Received(1)
-            .ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>());
-        await _catalogClient.DidNotReceive()
-            .ReleaseReservationAsync(Arg.Any<Guid>(), product2Id, Arg.Any<CancellationToken>());
+        await _compensationService.Received(1).ReleaseReservationsAsync(
+            Arg.Any<Guid>(),
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Count == 1 && ids.Contains(product1Id)),
+            Arg.Any<CancellationToken>());
     }
 
-    // ── Release fails all retries → CompensationFailed ────────────────────────
+    // ── Compensation service returns false → CompensationFailed ───────────────
 
     [Fact]
-    public async Task HandleAsync_ReturnsPlacementFailed_WhenReleaseFailsAllRetries()
+    public async Task HandleAsync_ReturnsPlacementFailed_WhenCompensationServiceReturnsFalse()
     {
-        var (product1Id, product2Id, product3Id) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var (product1Id, product2Id) = (Guid.NewGuid(), Guid.NewGuid());
         SetupSuccessfulProduct(product1Id);
         SetupSuccessfulProduct(product2Id);
-        SetupSuccessfulProduct(product3Id);
         SetupSuccessfulReservation(product1Id);
-        SetupSuccessfulReservation(product2Id);
-        _catalogClient.ReserveStockAsync(product3Id, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        _catalogClient.ReserveStockAsync(product2Id, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(Result<ReservationResponse>.Failure(Error.Conflict("x", "y")));
-        _catalogClient.ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>())
-            .Returns(Result<Unit>.Failure(Error.Failure("x", "y")));
-        _catalogClient.ReleaseReservationAsync(Arg.Any<Guid>(), product2Id, Arg.Any<CancellationToken>())
-            .Returns(Result<Unit>.Success(Unit.Value));
+        _compensationService
+            .ReleaseReservationsAsync(Arg.Any<Guid>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(false);
 
         var command = new PlaceOrderCommand(
             Guid.NewGuid(),
-            [
-                new PlaceOrderLineCommand(product1Id, 1),
-                new PlaceOrderLineCommand(product2Id, 1),
-                new PlaceOrderLineCommand(product3Id, 1)
-            ]);
+            [new PlaceOrderLineCommand(product1Id, 1), new PlaceOrderLineCommand(product2Id, 1)]);
 
         var result = await _handler.HandleAsync(command);
 
         Assert.True(result.IsFailure);
         Assert.Equal(OrderErrors.PlacementFailed, result.Error);
-    }
-
-    [Fact]
-    public async Task HandleAsync_RetriesRelease3Times_WhenReleaseFailsAllRetries()
-    {
-        var (product1Id, product2Id) = (Guid.NewGuid(), Guid.NewGuid());
-        SetupSuccessfulProduct(product1Id);
-        SetupSuccessfulProduct(product2Id);
-        SetupSuccessfulReservation(product1Id);
-        _catalogClient.ReserveStockAsync(product2Id, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(Result<ReservationResponse>.Failure(Error.Conflict("x", "y")));
-        _catalogClient.ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>())
-            .Returns(Result<Unit>.Failure(Error.Failure("x", "y")));
-
-        var command = new PlaceOrderCommand(
-            Guid.NewGuid(),
-            [new PlaceOrderLineCommand(product1Id, 1), new PlaceOrderLineCommand(product2Id, 1)]);
-
-        await _handler.HandleAsync(command);
-
-        await _catalogClient.Received(3)
-            .ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task HandleAsync_StillReleasesOtherLines_WhenOneReleaseFails()
-    {
-        var (product1Id, product2Id, product3Id) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-        SetupSuccessfulProduct(product1Id);
-        SetupSuccessfulProduct(product2Id);
-        SetupSuccessfulProduct(product3Id);
-        SetupSuccessfulReservation(product1Id);
-        SetupSuccessfulReservation(product2Id);
-        _catalogClient.ReserveStockAsync(product3Id, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(Result<ReservationResponse>.Failure(Error.Conflict("x", "y")));
-        _catalogClient.ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>())
-            .Returns(Result<Unit>.Failure(Error.Failure("x", "y")));
-        _catalogClient.ReleaseReservationAsync(Arg.Any<Guid>(), product2Id, Arg.Any<CancellationToken>())
-            .Returns(Result<Unit>.Success(Unit.Value));
-
-        var command = new PlaceOrderCommand(
-            Guid.NewGuid(),
-            [
-                new PlaceOrderLineCommand(product1Id, 1),
-                new PlaceOrderLineCommand(product2Id, 1),
-                new PlaceOrderLineCommand(product3Id, 1)
-            ]);
-
-        await _handler.HandleAsync(command);
-
-        // product1 release: 3 retries (all failed)
-        await _catalogClient.Received(3)
-            .ReleaseReservationAsync(Arg.Any<Guid>(), product1Id, Arg.Any<CancellationToken>());
-        // product2 release: attempted and succeeded
-        await _catalogClient.Received(1)
-            .ReleaseReservationAsync(Arg.Any<Guid>(), product2Id, Arg.Any<CancellationToken>());
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

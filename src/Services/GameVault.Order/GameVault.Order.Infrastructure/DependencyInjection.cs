@@ -1,5 +1,6 @@
 using GameVault.Order.Application.Abstractions;
 using GameVault.Order.Infrastructure.Catalog;
+using GameVault.Order.Infrastructure.Payment;
 using GameVault.Order.Infrastructure.Persistence;
 using GameVault.Order.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,9 @@ public static class DependencyInjection
 
         services.AddDaprClient();
         services.AddScoped<ICatalogClient, CatalogClient>();
+
+        services.AddSingleton<Random>();
+        services.AddScoped<IPaymentGateway, MockedPaymentGateway>();
 
         return services;
     }

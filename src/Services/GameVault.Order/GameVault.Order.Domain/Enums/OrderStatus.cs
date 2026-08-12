@@ -7,5 +7,6 @@ public enum OrderStatus : byte
     Paid = 2,
     Failed = 3,
     CompensationFailed = 4,
-    Cancelled = 5
+    Cancelled = 5,
+    PaymentFailed = 6
 }

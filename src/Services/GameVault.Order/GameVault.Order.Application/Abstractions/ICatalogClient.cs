@@ -8,4 +8,5 @@ public interface ICatalogClient
     Task<Result<GameResponse>> GetProductAsync(Guid productId, CancellationToken cancellationToken = default);
     Task<Result<ReservationResponse>> ReserveStockAsync(Guid productId, Guid orderId, int quantity, CancellationToken cancellationToken = default);
     Task<Result<Unit>> ReleaseReservationAsync(Guid orderId, Guid productId, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> ConfirmReservationAsync(Guid orderId, Guid productId, CancellationToken cancellationToken = default);
 }

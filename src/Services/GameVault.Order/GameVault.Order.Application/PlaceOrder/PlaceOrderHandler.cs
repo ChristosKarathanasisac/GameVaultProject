@@ -11,19 +11,20 @@ namespace GameVault.Order.Application.PlaceOrder;
 
 public sealed class PlaceOrderHandler : IPlaceOrderHandler
 {
-    private const int MaxReleaseRetries = 3;
-
     private readonly IOrderRepository _orderRepository;
     private readonly ICatalogClient _catalogClient;
+    private readonly IOrderCompensationService _compensationService;
     private readonly ILogger<PlaceOrderHandler> _logger;
 
     public PlaceOrderHandler(
         IOrderRepository orderRepository,
         ICatalogClient catalogClient,
+        IOrderCompensationService compensationService,
         ILogger<PlaceOrderHandler> logger)
     {
         _orderRepository = orderRepository;
         _catalogClient = catalogClient;
+        _compensationService = compensationService;
         _logger = logger;
     }
 
@@ -62,13 +63,9 @@ public sealed class PlaceOrderHandler : IPlaceOrderHandler
                 productId, order.Id, line.Quantity, cancellationToken);
 
             if (reserveResult.IsSuccess)
-            {
                 reservedProductIds.Add(productId);
-            }
             else
-            {
                 break;
-            }
         }
 
         if (reservedProductIds.Count == lineData.Count)
@@ -78,20 +75,10 @@ public sealed class PlaceOrderHandler : IPlaceOrderHandler
             return order.ToOrderResponse();
         }
 
-        var anyReleaseFailed = false;
-        foreach (var productId in reservedProductIds)
-        {
-            var released = await TryReleaseWithRetryAsync(order.Id, productId, cancellationToken);
-            if (!released)
-            {
-                anyReleaseFailed = true;
-                _logger.LogError(
-                    "Failed to release reservation for order {OrderId}, product {ProductId} after {MaxRetries} attempts — manual reconciliation may be required",
-                    order.Id, productId, MaxReleaseRetries);
-            }
-        }
+        var allReleased = await _compensationService.ReleaseReservationsAsync(
+            order.Id, reservedProductIds, cancellationToken);
 
-        if (anyReleaseFailed)
+        if (!allReleased)
         {
             order.MarkCompensationFailed();
             _logger.LogError(
@@ -105,20 +92,5 @@ public sealed class PlaceOrderHandler : IPlaceOrderHandler
 
         await _orderRepository.SaveChangesAsync(cancellationToken);
         return OrderErrors.PlacementFailed;
-    }
-
-    private async Task<bool> TryReleaseWithRetryAsync(
-        Guid orderId,
-        Guid productId,
-        CancellationToken cancellationToken)
-    {
-        for (var attempt = 0; attempt < MaxReleaseRetries; attempt++)
-        {
-            var result = await _catalogClient.ReleaseReservationAsync(orderId, productId, cancellationToken);
-            if (result.IsSuccess)
-                return true;
-        }
-
-        return false;
     }
 }

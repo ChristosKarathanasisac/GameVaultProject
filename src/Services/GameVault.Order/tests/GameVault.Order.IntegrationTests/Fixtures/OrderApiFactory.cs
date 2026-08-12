@@ -1,4 +1,5 @@
 using GameVault.Order.Application.Abstractions;
+using GameVault.Order.Application.Payments;
 using GameVault.Order.IntegrationTests.Auth;
 using GameVault.Order.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
@@ -14,9 +15,9 @@ namespace GameVault.Order.IntegrationTests.Fixtures;
 
 /// <summary>
 /// Shared WebApplicationFactory for Order integration tests.
-/// Starts one PostgreSQL container per test collection and replaces three production
+/// Starts one PostgreSQL container per test collection and replaces four production
 /// registrations: the database (→ Testcontainers), the Catalog client (→ NSubstitute mock),
-/// and the JWT auth scheme (→ TestAuthHandler).
+/// the payment gateway (→ NSubstitute mock), and the JWT auth scheme (→ TestAuthHandler).
 /// Migrations run automatically on first server start (inherited from Program.cs startup).
 /// </summary>
 public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
@@ -26,6 +27,7 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
         .Build();
 
     public ICatalogClient CatalogClientMock { get; } = Substitute.For<ICatalogClient>();
+    public IPaymentGateway PaymentGatewayMock { get; } = Substitute.For<IPaymentGateway>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -33,6 +35,7 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
         {
             ReplaceDatabase(services);
             ReplaceCatalogClient(services);
+            ReplacePaymentGateway(services);
             ReplaceAuthentication(services);
         });
     }
@@ -59,6 +62,18 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
             services.Remove(d);
 
         services.AddSingleton(CatalogClientMock);
+    }
+
+    private void ReplacePaymentGateway(IServiceCollection services)
+    {
+        var descriptors = services
+            .Where(d => d.ServiceType == typeof(IPaymentGateway))
+            .ToList();
+
+        foreach (var d in descriptors)
+            services.Remove(d);
+
+        services.AddSingleton(PaymentGatewayMock);
     }
 
     private static void ReplaceAuthentication(IServiceCollection services)
@@ -103,6 +118,22 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
         var line = GameVault.Order.Domain.Entities.OrderLine.Create(
             Guid.NewGuid(), "Test Game", 29.99m, 1);
         var order = OrderEntity.Create(customerId, [line]);
+
+        db.Orders.Add(order);
+        await db.SaveChangesAsync();
+
+        return order.Id;
+    }
+
+    public async Task<Guid> SeedReservedOrderAsync(Guid customerId)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+
+        var line = GameVault.Order.Domain.Entities.OrderLine.Create(
+            Guid.NewGuid(), "Test Game", 29.99m, 1);
+        var order = OrderEntity.Create(customerId, [line]);
+        order.MarkReserved();
 
         db.Orders.Add(order);
         await db.SaveChangesAsync();

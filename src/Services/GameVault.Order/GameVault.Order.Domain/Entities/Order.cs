@@ -63,6 +63,15 @@ public sealed class Order
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void MarkPaymentFailed()
+    {
+        if (Status != OrderStatus.Reserved)
+            throw new InvalidOrderStatusException(Status, nameof(MarkPaymentFailed));
+
+        Status = OrderStatus.PaymentFailed;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void MarkCompensationFailed()
     {
         if (Status != OrderStatus.Pending && Status != OrderStatus.Reserved)

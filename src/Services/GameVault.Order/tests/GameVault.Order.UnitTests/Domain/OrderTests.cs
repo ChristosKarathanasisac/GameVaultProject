@@ -204,6 +204,57 @@ public sealed class OrderTests
         Assert.Throws<InvalidOrderStatusException>(() => order.MarkFailed());
     }
 
+    // ── MarkPaymentFailed ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void MarkPaymentFailed_FromReserved_Succeeds()
+    {
+        var order = CreatePendingOrder();
+        order.MarkReserved();
+        var before = DateTime.UtcNow;
+
+        order.MarkPaymentFailed();
+
+        Assert.Equal(OrderStatus.PaymentFailed, order.Status);
+        Assert.True(order.UpdatedAt >= before);
+    }
+
+    [Fact]
+    public void MarkPaymentFailed_FromPending_ThrowsInvalidOrderStatusException()
+    {
+        var order = CreatePendingOrder();
+
+        Assert.Throws<InvalidOrderStatusException>(() => order.MarkPaymentFailed());
+    }
+
+    [Fact]
+    public void MarkPaymentFailed_FromPaid_ThrowsInvalidOrderStatusException()
+    {
+        var order = CreatePendingOrder();
+        order.MarkReserved();
+        order.MarkPaid();
+
+        Assert.Throws<InvalidOrderStatusException>(() => order.MarkPaymentFailed());
+    }
+
+    [Fact]
+    public void MarkPaymentFailed_FromFailed_ThrowsInvalidOrderStatusException()
+    {
+        var order = CreatePendingOrder();
+        order.MarkFailed();
+
+        Assert.Throws<InvalidOrderStatusException>(() => order.MarkPaymentFailed());
+    }
+
+    [Fact]
+    public void MarkPaymentFailed_FromCompensationFailed_ThrowsInvalidOrderStatusException()
+    {
+        var order = CreatePendingOrder();
+        order.MarkCompensationFailed();
+
+        Assert.Throws<InvalidOrderStatusException>(() => order.MarkPaymentFailed());
+    }
+
     // ── MarkCompensationFailed ────────────────────────────────────────────────
 
     [Fact]

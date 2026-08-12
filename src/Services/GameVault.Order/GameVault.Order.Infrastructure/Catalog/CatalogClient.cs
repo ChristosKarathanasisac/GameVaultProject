@@ -86,6 +86,29 @@ public sealed class CatalogClient : ICatalogClient
         return Unit.Value;
     }
 
+    public async Task<Result<Unit>> ConfirmReservationAsync(
+        Guid orderId,
+        Guid productId,
+        CancellationToken cancellationToken = default)
+    {
+        var request = _daprClient.CreateInvokeMethodRequest(
+            HttpMethod.Post,
+            CatalogConsts.AppId,
+            $"api/orders/{orderId}/products/{productId}/reservations/confirm");
+
+        PropagateCorrelationId(request);
+
+        var response = await _daprClient.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Conflict)
+            return Error.Conflict("Catalog.ConfirmFailed", "Failed to confirm stock reservation.");
+
+        if (!response.IsSuccessStatusCode)
+            return Error.Failure("Catalog.ConfirmFailed", "Failed to confirm stock reservation.");
+
+        return Unit.Value;
+    }
+
     private void PropagateCorrelationId(HttpRequestMessage request)
     {
         var correlationId = _httpContextAccessor.HttpContext?

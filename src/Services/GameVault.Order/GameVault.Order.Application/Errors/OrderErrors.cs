@@ -18,4 +18,10 @@ public static class OrderErrors
 
     public static readonly Error PlacementFailed =
         Error.Conflict("Order.PlacementFailed", "The order could not be placed because stock reservation failed.");
+
+    public static readonly Error InvalidPaymentState =
+        Error.Conflict("Order.Payment.InvalidState", "Payment can only be initiated for orders in Reserved status.");
+
+    public static readonly Error PaymentDeclined =
+        Error.Conflict("Order.Payment.Declined", "The payment was declined.");
 }
