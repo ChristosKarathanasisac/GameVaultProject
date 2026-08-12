@@ -20,11 +20,6 @@ public sealed class GetProductByIdHandler : IGetProductByIdHandler
         if (product is null)
             throw new ProductNotFoundException(id);
 
-        return new GameResponse(
-            product.Id,
-            product.Name,
-            product.Description,
-            product.Price,
-            product.Stock?.AvailableStock ?? 0);
+        return product.ToGameResponse();
     }
 }

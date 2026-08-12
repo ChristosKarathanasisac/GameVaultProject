@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\GameVault.Catalog.Application\GameVault.Catalog.Application.csproj" />
     <ProjectReference Include="..\..\GameVault.Catalog.Domain\GameVault.Catalog.Domain.csproj" />
   </ItemGroup>
 
