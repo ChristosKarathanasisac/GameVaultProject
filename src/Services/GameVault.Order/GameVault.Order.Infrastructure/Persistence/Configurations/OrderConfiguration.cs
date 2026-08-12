@@ -23,6 +23,10 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
             .IsRequired()
             .HasConversion<byte>();
 
+        builder.Property(o => o.PriorStatus)
+            .IsRequired(false)
+            .HasConversion<byte?>();
+
         builder.Property(o => o.TotalAmount)
             .IsRequired()
             .HasPrecision(18, 2);

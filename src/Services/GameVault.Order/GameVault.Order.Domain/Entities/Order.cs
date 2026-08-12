@@ -15,6 +15,12 @@ public sealed class Order
     public Guid CustomerId { get; private set; }
 
     public OrderStatus Status { get; private set; }
+
+    // Captured at the moment MarkCompensationFailed() fires so the read side
+    // can map CompensationFailed → the correct public-facing status string
+    // (Failed when coming from Pending, PaymentFailed when coming from Reserved).
+    public OrderStatus? PriorStatus { get; private set; }
+
     public decimal TotalAmount { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
@@ -77,6 +83,7 @@ public sealed class Order
         if (Status != OrderStatus.Pending && Status != OrderStatus.Reserved)
             throw new InvalidOrderStatusException(Status, nameof(MarkCompensationFailed));
 
+        PriorStatus = Status;
         Status = OrderStatus.CompensationFailed;
         UpdatedAt = DateTime.UtcNow;
     }

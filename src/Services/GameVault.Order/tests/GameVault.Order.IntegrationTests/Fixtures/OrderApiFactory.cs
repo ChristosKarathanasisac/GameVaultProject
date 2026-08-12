@@ -141,6 +141,25 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
         return order.Id;
     }
 
+    public async Task<IReadOnlyList<Guid>> SeedOrdersAsync(Guid customerId, int count)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+
+        var ids = new List<Guid>(count);
+        for (var i = 0; i < count; i++)
+        {
+            var line = GameVault.Order.Domain.Entities.OrderLine.Create(
+                Guid.NewGuid(), $"Test Game {i + 1}", 9.99m, 1);
+            var order = OrderEntity.Create(customerId, [line]);
+            db.Orders.Add(order);
+            ids.Add(order.Id);
+        }
+
+        await db.SaveChangesAsync();
+        return ids;
+    }
+
     // --- Lifecycle ---
 
     public async Task InitializeAsync() => await _postgres.StartAsync();

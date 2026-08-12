@@ -1,5 +1,7 @@
 using GameVault.Contracts.Requests.Order;
 using GameVault.Core.Extensions;
+using GameVault.Order.Application.GetOrderById;
+using GameVault.Order.Application.ListMyOrders;
 using GameVault.Order.Application.PayOrder;
 using GameVault.Order.Application.PlaceOrder;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +16,48 @@ public class OrdersController : ControllerBase
 {
     private readonly IPlaceOrderHandler _placeOrderHandler;
     private readonly IPayOrderHandler _payOrderHandler;
+    private readonly IListMyOrdersHandler _listMyOrdersHandler;
+    private readonly IGetOrderByIdHandler _getOrderByIdHandler;
 
-    public OrdersController(IPlaceOrderHandler placeOrderHandler, IPayOrderHandler payOrderHandler)
+    public OrdersController(
+        IPlaceOrderHandler placeOrderHandler,
+        IPayOrderHandler payOrderHandler,
+        IListMyOrdersHandler listMyOrdersHandler,
+        IGetOrderByIdHandler getOrderByIdHandler)
     {
         _placeOrderHandler = placeOrderHandler;
         _payOrderHandler = payOrderHandler;
+        _listMyOrdersHandler = listMyOrdersHandler;
+        _getOrderByIdHandler = getOrderByIdHandler;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ListMyOrders(
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 0,
+        CancellationToken cancellationToken = default)
+    {
+        var customerId = User.GetUserId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var query = new ListMyOrdersQuery(customerId.Value, page, pageSize);
+        var result = await _listMyOrdersHandler.HandleAsync(query, cancellationToken);
+        return result.ToActionResult(Ok);
+    }
+
+    [HttpGet("{orderId:guid}")]
+    public async Task<IActionResult> GetOrderById(
+        [FromRoute] Guid orderId,
+        CancellationToken cancellationToken)
+    {
+        var callerId = User.GetUserId();
+        if (callerId is null)
+            return Unauthorized();
+
+        var query = new GetOrderByIdQuery(orderId, callerId.Value);
+        var result = await _getOrderByIdHandler.HandleAsync(query, cancellationToken);
+        return result.ToActionResult(Ok);
     }
 
     [HttpPost]

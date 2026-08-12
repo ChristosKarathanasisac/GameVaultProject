@@ -6,6 +6,7 @@ public sealed record OrderResponse(
     string Status,
     decimal TotalAmount,
     DateTime CreatedAt,
+    DateTime UpdatedAt,
     IReadOnlyList<OrderLineResponse> Lines);
 
 public sealed record OrderLineResponse(
