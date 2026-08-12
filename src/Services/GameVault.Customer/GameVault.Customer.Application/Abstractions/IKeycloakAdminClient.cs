@@ -19,5 +19,5 @@ public interface IKeycloakAdminClient
         string lastName,
         CancellationToken cancellationToken = default);
 
-    Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<Unit>> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default);
 }

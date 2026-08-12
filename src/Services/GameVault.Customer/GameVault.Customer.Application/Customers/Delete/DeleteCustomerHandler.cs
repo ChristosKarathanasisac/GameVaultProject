@@ -26,8 +26,10 @@ public sealed class DeleteCustomerHandler : IDeleteCustomerHandler
         if (customer is null)
             return CustomerErrors.NotFound;
 
-        
-        await _keycloakClient.DeleteUserAsync(routeId, cancellationToken);
+        var keycloakResult = await _keycloakClient.DeleteUserAsync(routeId, cancellationToken);
+
+        if (keycloakResult.IsFailure)
+            return keycloakResult.Error;
 
         customer.SoftDelete();
 

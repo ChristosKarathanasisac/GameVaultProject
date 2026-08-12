@@ -140,7 +140,7 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         return Unit.Value;
     }
 
-    public async Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<Result<Unit>> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var token = await GetAdminTokenAsync(cancellationToken);
 
@@ -153,9 +153,12 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         var response = await _httpClient.SendAsync(request, cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
-            return;
+            return Unit.Value;
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+            return CustomerErrors.DeleteRejectedByKeycloak;
+
+        return Unit.Value;
     }
 
     private async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken)

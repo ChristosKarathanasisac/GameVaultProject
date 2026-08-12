@@ -1,8 +1,8 @@
 using GameVault.Customer.Application.Abstractions;
 using GameVault.Customer.Application.Customers.Delete;
 using GameVault.Customer.Application.Errors;
+using GameVault.SharedKernel.Results;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using CustomerEntity = global::GameVault.Customer.Domain.Entities.Customer;
 
 namespace GameVault.Customer.UnitTests.Application;
@@ -78,17 +78,19 @@ public sealed class DeleteCustomerHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_NeverPersistsLocally_WhenKeycloakDeletionFails()
+    public async Task HandleAsync_ReturnsFailure_WhenKeycloakDeletionFails()
     {
         var id = Guid.NewGuid();
         var customer = CustomerEntity.Create(id, "alice@example.com", "Alice", "Smith", null);
         _repository.GetByIdAsync(id, Arg.Any<CancellationToken>())
             .Returns(customer);
         _keycloak.DeleteUserAsync(id, Arg.Any<CancellationToken>())
-            .ThrowsAsync(new InvalidOperationException("Keycloak down"));
+            .ReturnsForAnyArgs(Result<Unit>.Failure(CustomerErrors.DeleteRejectedByKeycloak));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _handler.HandleAsync(id, id));
+        var result = await _handler.HandleAsync(id, id);
 
+        Assert.True(result.IsFailure);
+        Assert.Equal(CustomerErrors.DeleteRejectedByKeycloak, result.Error);
         Assert.False(customer.IsDeleted);
         Assert.Null(customer.DeletedAt);
         await _repository.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);

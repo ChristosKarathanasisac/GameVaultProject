@@ -1,6 +1,8 @@
 using System.Net;
 using GameVault.Customer.IntegrationTests.Fixtures;
+using GameVault.SharedKernel.Results;
 using NSubstitute;
+using NSubstitute.ClearExtensions;
 
 namespace GameVault.Customer.IntegrationTests.Customers;
 
@@ -16,7 +18,14 @@ public sealed class DeleteCustomerTests : IAsyncLifetime
         _anonymousClient = factory.CreateClient();
     }
 
-    public Task InitializeAsync() => _factory.ResetDatabaseAsync();
+    public Task InitializeAsync()
+    {
+        _factory.KeycloakMock.ClearSubstitute(ClearOptions.All);
+        _factory.KeycloakMock
+            .DeleteUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result<Unit>.Success(Unit.Value));
+        return _factory.ResetDatabaseAsync();
+    }
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]

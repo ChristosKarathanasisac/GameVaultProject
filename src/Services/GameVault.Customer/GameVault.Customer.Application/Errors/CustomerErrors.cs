@@ -30,4 +30,7 @@ public static class CustomerErrors
 
     public static Error RegistrationRejectedByKeycloak(string detail) =>
         Error.Validation("Customer.Validation.KeycloakRejected", detail);
+
+    public static readonly Error DeleteRejectedByKeycloak =
+        Error.Failure("Customer.DeleteKeycloakFailure", "Failed to remove user from identity provider.");
 }
