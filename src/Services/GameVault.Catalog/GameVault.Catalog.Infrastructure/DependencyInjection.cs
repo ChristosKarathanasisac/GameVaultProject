@@ -19,6 +19,7 @@ public static class DependencyInjection
                 npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "catalog")));
 
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IStockReservationRepository, StockReservationRepository>();
 
         return services;
     }

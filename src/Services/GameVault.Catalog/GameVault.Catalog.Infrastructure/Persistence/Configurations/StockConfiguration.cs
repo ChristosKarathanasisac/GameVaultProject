@@ -21,7 +21,10 @@ internal sealed class StockConfiguration : IEntityTypeConfiguration<Stock>
         builder.Property(s => s.UpdatedAt)
             .IsRequired();
 
-        // No RowVersion/xmin here — concurrency handled via atomic conditional UPDATE
-        // (UPDATE Stock SET AvailableStock = AvailableStock - @qty WHERE ProductId = @id AND AvailableStock >= @qty)
+        
+        builder.Property<uint>("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
     }
 }

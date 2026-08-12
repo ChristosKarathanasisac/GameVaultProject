@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GameVault.Catalog.UnitTests/GameVault.Catalog.UnitTests.csproj" />
+    <Project Path="tests/GameVault.Catalog.IntegrationTests/GameVault.Catalog.IntegrationTests.csproj" />
   </Folder>
 </Solution>
