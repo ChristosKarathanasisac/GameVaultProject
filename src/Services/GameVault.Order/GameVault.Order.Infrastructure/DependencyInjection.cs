@@ -1,4 +1,5 @@
 using GameVault.Order.Application.Abstractions;
+using GameVault.Order.Infrastructure.Catalog;
 using GameVault.Order.Infrastructure.Persistence;
 using GameVault.Order.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,9 @@ public static class DependencyInjection
                 npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "order")));
 
         services.AddScoped<IOrderRepository, OrderRepository>();
+
+        services.AddDaprClient();
+        services.AddScoped<ICatalogClient, CatalogClient>();
 
         return services;
     }

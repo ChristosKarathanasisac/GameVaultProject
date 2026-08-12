@@ -25,6 +25,7 @@ try
     builder.Services.AddExceptionHandling();
     builder.Services.AddCorrelationId();
     builder.Services.AddOpenApi();
+    builder.Services.AddKeycloakAuthentication(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
 
@@ -43,6 +44,7 @@ try
     app.UseCorrelationId();
     app.UseSerilogRequestLogging();
 
+    app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 

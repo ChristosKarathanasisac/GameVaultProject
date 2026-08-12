@@ -72,6 +72,14 @@ There is no distributed transaction across a service's own database and another 
 - **Known gap — no email-change endpoint**: `UpdateCustomerRequest` only covers `FirstName`/`LastName`/`PhoneNumber`; there is no way to change a registered email either locally or in Keycloak today. Tracked as a follow-up.
 - **Known gap — no password reset/change flow**: `IKeycloakAdminClient` only exposes create/delete; there is no self-service password reset or change capability. Tracked as a follow-up.
 
+### Order → Catalog (stock reservation)
+
+`POST /api/orders` is the system's first cross-service write. The handler calls Catalog synchronously via Dapr service invocation — sync because the response to the customer must include an immediate reserve/reject outcome.
+
+- **Idempotency on write**: Catalog's `UX_StockReservations_OrderId_ProductId` unique index prevents duplicate reservations for the same order+product pair. A retried `POST /api/orders` from the client that generates a new `OrderId` is *not* idempotent — client-side idempotency (an `Idempotency-Key` header + nullable column on `Order`) is a tracked follow-up.
+- **Compensation on partial failure**: if any line's reservation fails, the handler releases all prior successful reservations synchronously, with up to three retries per release call. The order is marked `Failed` if all releases succeed, or `CompensationFailed` if any release exhausts all retries. The client receives `409 PlacementFailed` in both cases — the distinction is stored in the database for a future reconciliation worker to act on.
+- **Stale reservations**: `StockReservation.ExpiresAt` is written at reservation time but not yet enforced by any background job. A future eviction pass will sweep expired, unreleased reservations — the column is the hook for that step.
+
 ## Tech Stack
 
 | Concern | Choice |
@@ -141,12 +149,14 @@ Each service has two test projects under `tests/`:
 ```bash
 dotnet test src/Services/GameVault.Catalog/tests/GameVault.Catalog.UnitTests
 dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.UnitTests
+dotnet test src/Services/GameVault.Order/tests/GameVault.Order.UnitTests
 ```
 
 **Running integration tests** (Docker Desktop must be running):
 ```bash
 dotnet test src/Services/GameVault.Catalog/tests/GameVault.Catalog.IntegrationTests
 dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.IntegrationTests
+dotnet test src/Services/GameVault.Order/tests/GameVault.Order.IntegrationTests
 ```
 
 Integration tests spin up a dedicated PostgreSQL container per test run, apply migrations automatically, and tear the container down when done. See `CLAUDE.md §7b` for the full authoring guide.
