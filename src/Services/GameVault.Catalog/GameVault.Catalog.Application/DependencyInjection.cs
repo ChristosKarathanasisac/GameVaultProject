@@ -1,5 +1,7 @@
 using GameVault.Catalog.Application.Products.GetProductById;
 using GameVault.Catalog.Application.Products.ListProducts;
+using GameVault.Catalog.Application.Reservations.ConfirmReservation;
+using GameVault.Catalog.Application.Reservations.ReleaseReservation;
 using GameVault.Catalog.Application.Reservations.ReserveStock;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +14,8 @@ public static class DependencyInjection
         services.AddScoped<IGetProductByIdHandler, GetProductByIdHandler>();
         services.AddScoped<IListProductsHandler, ListProductsHandler>();
         services.AddScoped<IReserveStockHandler, ReserveStockHandler>();
+        services.AddScoped<IConfirmReservationHandler, ConfirmReservationHandler>();
+        services.AddScoped<IReleaseReservationHandler, ReleaseReservationHandler>();
         return services;
     }
 }
