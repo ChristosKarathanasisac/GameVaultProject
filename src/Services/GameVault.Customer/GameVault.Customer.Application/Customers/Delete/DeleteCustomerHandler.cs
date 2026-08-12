@@ -26,14 +26,17 @@ public sealed class DeleteCustomerHandler : IDeleteCustomerHandler
         if (customer is null)
             return CustomerErrors.NotFound;
 
+        customer.SoftDelete();
+        await _repository.SaveChangesAsync(cancellationToken);
+
         var keycloakResult = await _keycloakClient.DeleteUserAsync(routeId, cancellationToken);
 
         if (keycloakResult.IsFailure)
+        {
+            customer.Reactivate();
+            await _repository.SaveChangesAsync(cancellationToken);
             return keycloakResult.Error;
-
-        customer.SoftDelete();
-
-        await _repository.SaveChangesAsync(cancellationToken);
+        }
 
         return Unit.Value;
     }
