@@ -40,7 +40,6 @@ internal sealed class StockReservationConfiguration : IEntityTypeConfiguration<S
             .IsUnique()
             .HasDatabaseName("UX_StockReservations_OrderId_ProductId");
 
-        // Supports the expired-reservation cleanup background job
         builder.HasIndex(r => new { r.Status, r.ExpiresAt })
             .HasDatabaseName("IX_StockReservations_Status_ExpiresAt");
     }

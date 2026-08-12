@@ -365,6 +365,7 @@ FodyWeavers.xsd
 # Local secrets — never commit
 infra/.env
 infra/dapr/secrets.json
+**/appsettings.Development.json
 
 # Claude Ai
 CLAUDE.md
