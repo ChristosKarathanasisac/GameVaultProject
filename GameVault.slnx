@@ -7,8 +7,12 @@
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalog.Application.csproj" />
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj" />
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj" />
-    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.UnitTests/GameVault.Catalog.UnitTests.csproj" />
-    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.IntegrationTests/GameVault.Catalog.IntegrationTests.csproj" />
+    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.UnitTests/GameVault.Catalog.UnitTests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.IntegrationTests/GameVault.Catalog.IntegrationTests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
   </Folder>
   <Folder Name="/Customer/">
     <Project Path="src/Services/GameVault.Customer/GameVault.Customer.Api/GameVault.Customer.Api/GameVault.Customer.Api.csproj" />
