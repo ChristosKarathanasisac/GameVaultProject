@@ -36,9 +36,11 @@ jobs:
 
       - name: Unit Tests
         run: |
+          FAILED=0
           for proj in $(find . -name "*.UnitTests.csproj"); do
-            dotnet test "$proj" --configuration Release --no-build --logger "trx;LogFileName=unit-results.trx"
+            dotnet test "$proj" --configuration Release --no-build --logger "trx;LogFileName=unit-results.trx" || FAILED=1
           done
+          exit $FAILED
 
       - name: Upload unit test results
         if: always()
@@ -77,9 +79,11 @@ jobs:
 
       - name: Integration Tests
         run: |
+          FAILED=0
           for proj in $(find . -name "*.IntegrationTests.csproj"); do
-            dotnet test "$proj" --configuration Release --no-build --logger "trx;LogFileName=integration-results.trx"
+            dotnet test "$proj" --configuration Release --no-build --logger "trx;LogFileName=integration-results.trx" || FAILED=1
           done
+          exit $FAILED
 
       - name: Upload integration test results
         if: always()

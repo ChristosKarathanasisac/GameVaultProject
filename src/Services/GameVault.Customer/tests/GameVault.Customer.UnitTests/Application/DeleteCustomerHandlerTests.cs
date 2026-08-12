@@ -95,7 +95,7 @@ public sealed class DeleteCustomerHandlerTests
         Assert.Equal(CustomerErrors.DeleteRejectedByKeycloak, result.Error);
         Assert.False(customer.IsDeleted);
         Assert.Null(customer.DeletedAt);
-        await _repository.DidNotReceiveWithAnyArgs().SaveChangesAsync(default);
+        await _repository.Received(2).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
