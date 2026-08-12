@@ -1,4 +1,5 @@
 using GameVault.Catalog.Domain.Enums;
+using GameVault.Catalog.Domain.Exceptions;
 
 namespace GameVault.Catalog.Domain.Entities;
 
@@ -36,12 +37,18 @@ public sealed class StockReservation
 
     public void Confirm()
     {
+        if (Status != ReservationStatus.Reserved)
+            throw new InvalidReservationStatusException(Status, nameof(Confirm));
+
         Status = ReservationStatus.Confirmed;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void Release()
     {
+        if (Status != ReservationStatus.Reserved)
+            throw new InvalidReservationStatusException(Status, nameof(Release));
+
         Status = ReservationStatus.Released;
         UpdatedAt = DateTime.UtcNow;
     }
