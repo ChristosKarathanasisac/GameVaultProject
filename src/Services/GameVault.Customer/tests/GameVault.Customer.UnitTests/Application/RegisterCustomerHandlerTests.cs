@@ -89,6 +89,34 @@ public sealed class RegisterCustomerHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ReturnsConflict_WhenEmailBelongsToDeactivatedAccount()
+    {
+        var deleted = CustomerEntity.Create(Guid.NewGuid(), "alice@example.com", "Alice", "Smith", null);
+        deleted.SoftDelete();
+        _repository.GetDeletedByEmailAsync("alice@example.com", Arg.Any<CancellationToken>())
+            .Returns(deleted);
+
+        var result = await _handler.HandleAsync(ValidRequest());
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(CustomerErrors.EmailBelongsToDeactivatedAccount, result.Error);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NeverCallsKeycloak_WhenEmailBelongsToDeactivatedAccount()
+    {
+        var deleted = CustomerEntity.Create(Guid.NewGuid(), "alice@example.com", "Alice", "Smith", null);
+        deleted.SoftDelete();
+        _repository.GetDeletedByEmailAsync("alice@example.com", Arg.Any<CancellationToken>())
+            .Returns(deleted);
+
+        await _handler.HandleAsync(ValidRequest());
+
+        await _keycloak.DidNotReceiveWithAnyArgs()
+            .CreateUserAsync(default!, default!, default!, default!, default);
+    }
+
+    [Fact]
     public async Task HandleAsync_NeverCallsKeycloakOrRepository_WhenValidationFails()
     {
         var request = new RegisterCustomerRequest("", "S3cr3t!1", "Alice", "Smith", null);

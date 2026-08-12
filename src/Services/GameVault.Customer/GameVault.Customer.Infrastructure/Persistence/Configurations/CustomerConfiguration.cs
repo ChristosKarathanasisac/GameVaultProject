@@ -52,10 +52,9 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<CustomerE
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();
 
-        // Filtered unique index: a deleted customer's email can be reused.
+        // Global unique index: an email is permanently reserved — deleted accounts must reactivate.
         builder.HasIndex(c => c.Email)
             .IsUnique()
-            .HasFilter("\"IsDeleted\" = false")
-            .HasDatabaseName("UX_Customers_Email_Active");
+            .HasDatabaseName("UX_Customers_Email");
     }
 }

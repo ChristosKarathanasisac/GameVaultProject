@@ -15,6 +15,8 @@ public sealed class DeleteCustomerHandlerTests
 
     public DeleteCustomerHandlerTests()
     {
+        _keycloak.DeleteUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result<Unit>.Success(Unit.Value));
         _handler = new DeleteCustomerHandler(_repository, _keycloak);
     }
 

@@ -79,20 +79,19 @@ public sealed class RegisterCustomerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Register_Returns201_WhenSameEmailIsReusedAfterSoftDelete()
+    public async Task Register_Returns409_WhenEmailBelongsToDeactivatedAccount()
     {
-        // Validates that the filtered unique index (IsDeleted = false) allows email reuse
-        // once the original owner is soft-deleted.
+        // Validates that a globally unique email index prevents re-registration after soft-delete.
+        // The caller must use the reactivate endpoint instead.
         var existingId = await _factory.SeedCustomerAsync("alice@example.com");
         await _factory.SoftDeleteCustomerAsync(existingId);
-
-        _factory.KeycloakMock
-            .CreateUserAsync(default!, default!, default!, default!, default)
-            .ReturnsForAnyArgs(Result<Guid>.Success(Guid.NewGuid()));
 
         var response = await _client.PostAsJsonAsync("/customers/register",
             new RegisterCustomerRequest("alice@example.com", "S3cr3t!1", "Alice", "Smith", null));
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await _factory.KeycloakMock
+            .DidNotReceiveWithAnyArgs()
+            .CreateUserAsync(default!, default!, default!, default!, default);
     }
 }

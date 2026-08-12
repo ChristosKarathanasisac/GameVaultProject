@@ -1,5 +1,6 @@
 using GameVault.Contracts.Requests.Customer;
 using GameVault.Customer.Application.Abstractions;
+using GameVault.Customer.Application.Errors;
 using GameVault.SharedKernel.Results;
 using CustomerEntity = global::GameVault.Customer.Domain.Entities.Customer;
 
@@ -27,6 +28,10 @@ public sealed class RegisterCustomerHandler : IRegisterCustomerHandler
 
         if (validationError is not null)
             return validationError;
+
+        var deletedCustomer = await _repository.GetDeletedByEmailAsync(request.Email, cancellationToken);
+        if (deletedCustomer is not null)
+            return CustomerErrors.EmailBelongsToDeactivatedAccount;
 
         var keycloakResult = await _keycloakClient.CreateUserAsync(
             request.Email,

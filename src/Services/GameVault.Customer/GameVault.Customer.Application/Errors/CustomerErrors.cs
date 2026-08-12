@@ -13,6 +13,9 @@ public static class CustomerErrors
     public static readonly Error EmailConflict =
         Error.Conflict("Customer.EmailConflict", "A customer with this email already exists.");
 
+    public static readonly Error EmailBelongsToDeactivatedAccount =
+        Error.Conflict("Customer.EmailDeactivated", "This email belongs to a deactivated account. Use the reactivate endpoint to restore it.");
+
     public static readonly Error ReactivationConflict =
         Error.Conflict("Customer.ReactivationConflict", "This account could not be reactivated. Please contact support.");
 
