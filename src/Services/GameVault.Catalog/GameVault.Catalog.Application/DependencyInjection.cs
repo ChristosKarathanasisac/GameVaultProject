@@ -1,5 +1,6 @@
 using GameVault.Catalog.Application.Products.GetProductById;
 using GameVault.Catalog.Application.Products.ListProducts;
+using GameVault.Catalog.Application.Reservations.ReserveStock;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GameVault.Catalog.Application;
@@ -10,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IGetProductByIdHandler, GetProductByIdHandler>();
         services.AddScoped<IListProductsHandler, ListProductsHandler>();
+        services.AddScoped<IReserveStockHandler, ReserveStockHandler>();
         return services;
     }
 }
