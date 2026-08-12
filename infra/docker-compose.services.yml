@@ -69,6 +69,57 @@ services:
       - customer-api
     network_mode: "service:customer-api"
 
+  order-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Order/GameVault.Order.Api/Dockerfile
+    image: gamevault/order-api:latest
+    container_name: gamevault-order-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__OrderDb: "Host=order-db;Port=5432;Database=${ORDER_DB_NAME};Username=${ORDER_DB_USER};Password=${ORDER_DB_PASSWORD}"
+      Authentication__Authority: "${KEYCLOAK_AUTHORITY}"
+      Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
+      Keycloak__Realm: "${KEYCLOAK_REALM}"
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      order-db:
+        condition: service_healthy
+    networks:
+      - gamevault-network
+
+  order-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-order-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - order-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      - order-api
+    network_mode: "service:order-api"
+
   webedge-api:
     build:
       context: ../src
@@ -85,11 +136,13 @@ services:
       Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
       Keycloak__BaseUrl: "${KEYCLOAK_BASE_URL}"
       Keycloak__Realm: "${KEYCLOAK_REALM}"
+      ReverseProxy__Clusters__order-cluster__Destinations__destination1__Address: "http://order-api:8080/"
       Serilog__WriteTo__1__Name: "Seq"
       Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
     depends_on:
       - catalog-api
       - customer-api
+      - order-api
     networks:
       - gamevault-network
 

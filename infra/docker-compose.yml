@@ -74,6 +74,26 @@ services:
     networks:
       - gamevault-network
 
+  order-db:
+    image: postgres:16
+    container_name: gamevault-order-db
+    environment:
+      POSTGRES_USER: ${ORDER_DB_USER}
+      POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD}
+      POSTGRES_DB: ${ORDER_DB_NAME}
+    ports:
+      - "${ORDER_DB_PORT}:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ORDER_DB_USER} -d ${ORDER_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - gamevault-network
+
   dapr-placement:
     image: daprio/placement:1.17.12
     container_name: gamevault-dapr-placement
@@ -98,6 +118,7 @@ services:
 volumes:
   catalog-db-data:
   customer-db-data:
+  order-db-data:
   keycloak-data:
   seq-data:
   dapr-etcd-data:
