@@ -89,6 +89,18 @@ public sealed class RegisterCustomerHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ReturnsValidationFailure_WhenPhoneNumberFormatIsInvalid()
+    {
+        var request = new RegisterCustomerRequest(
+            "alice@example.com", "S3cr3t!1", "Alice", "Smith", "not-a-phone");
+
+        var result = await _handler.HandleAsync(request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(CustomerErrors.InvalidPhoneNumber, result.Error);
+    }
+
+    [Fact]
     public async Task HandleAsync_ReturnsConflict_WhenEmailBelongsToDeactivatedAccount()
     {
         var deleted = CustomerEntity.Create(Guid.NewGuid(), "alice@example.com", "Alice", "Smith", null);

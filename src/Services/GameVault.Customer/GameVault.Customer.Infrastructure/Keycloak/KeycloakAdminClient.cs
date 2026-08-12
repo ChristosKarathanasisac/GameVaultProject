@@ -40,27 +40,21 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         string lastName,
         CancellationToken cancellationToken = default)
     {
-        var token = await GetAdminTokenAsync(cancellationToken);
-
-        var request = new HttpRequestMessage(
-            HttpMethod.Post,
-            $"/admin/realms/{_options.Realm}/users");
-
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Content = JsonContent.Create(new
+        var response = await SendWithRetryAsync(token =>
         {
-            username = email,
-            email,
-            firstName,
-            lastName,
-            enabled = true,
-            credentials = new[]
+            var req = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            req.Content = JsonContent.Create(new
             {
-                new { type = "password", value = password, temporary = false }
-            }
-        });
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+                username = email,
+                email,
+                firstName,
+                lastName,
+                enabled = true,
+                credentials = new[] { new { type = "password", value = password, temporary = false } }
+            });
+            return req;
+        }, cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.Conflict)
             return CustomerErrors.EmailConflict;
@@ -103,28 +97,22 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         string lastName,
         CancellationToken cancellationToken = default)
     {
-        var token = await GetAdminTokenAsync(cancellationToken);
-
-        var request = new HttpRequestMessage(
-            HttpMethod.Post,
-            $"/admin/realms/{_options.Realm}/users");
-
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Content = JsonContent.Create(new
+        var response = await SendWithRetryAsync(token =>
         {
-            id = userId,
-            username = email,
-            email,
-            firstName,
-            lastName,
-            enabled = true,
-            credentials = new[]
+            var req = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            req.Content = JsonContent.Create(new
             {
-                new { type = "password", value = password, temporary = false }
-            }
-        });
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+                id = userId,
+                username = email,
+                email,
+                firstName,
+                lastName,
+                enabled = true,
+                credentials = new[] { new { type = "password", value = password, temporary = false } }
+            });
+            return req;
+        }, cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.Conflict)
             return CustomerErrors.ReactivationConflict;
@@ -142,15 +130,16 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
 
     public async Task<Result<Unit>> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var token = await GetAdminTokenAsync(cancellationToken);
-
-        var request = new HttpRequestMessage(
-            HttpMethod.Delete,
-            $"/admin/realms/{_options.Realm}/users/{userId}");
-
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var response = await SendWithRetryAsync(
+            token =>
+            {
+                var req = new HttpRequestMessage(
+                    HttpMethod.Delete,
+                    $"/admin/realms/{_options.Realm}/users/{userId}");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                return req;
+            },
+            cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
             return Unit.Value;
@@ -159,6 +148,22 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
             return CustomerErrors.DeleteRejectedByKeycloak;
 
         return Unit.Value;
+    }
+
+    // Sends a request and retries once with a fresh token if Keycloak responds 401 (expired token).
+    private async Task<HttpResponseMessage> SendWithRetryAsync(
+        Func<string, HttpRequestMessage> buildRequest,
+        CancellationToken cancellationToken)
+    {
+        var token = await GetAdminTokenAsync(cancellationToken);
+        var response = await _httpClient.SendAsync(buildRequest(token), cancellationToken);
+
+        if (response.StatusCode != HttpStatusCode.Unauthorized)
+            return response;
+
+        _cache.Remove(AdminTokenCacheKey);
+        token = await GetAdminTokenAsync(cancellationToken);
+        return await _httpClient.SendAsync(buildRequest(token), cancellationToken);
     }
 
     private async Task<string> GetAdminTokenAsync(CancellationToken cancellationToken)

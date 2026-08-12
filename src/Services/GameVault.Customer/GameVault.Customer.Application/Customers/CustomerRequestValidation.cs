@@ -51,12 +51,22 @@ internal static partial class CustomerRequestValidation
 
     public static Error? ValidatePhoneNumber(string? phoneNumber)
     {
-        if (phoneNumber is not null && phoneNumber.Length > PhoneNumberMaxLength)
+        if (phoneNumber is null)
+            return null;
+
+        if (phoneNumber.Length > PhoneNumberMaxLength)
             return CustomerErrors.TooLong(nameof(phoneNumber), PhoneNumberMaxLength);
+
+        if (!PhoneNumberRegex().IsMatch(phoneNumber))
+            return CustomerErrors.InvalidPhoneNumber;
 
         return null;
     }
 
     [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
     private static partial Regex EmailRegex();
+
+    // Accepts optional leading +, then at least 7 chars from digits, spaces, hyphens, parentheses, and dots.
+    [GeneratedRegex(@"^\+?[\d ()\-.]{7,}$")]
+    private static partial Regex PhoneNumberRegex();
 }

@@ -22,6 +22,9 @@ public static class CustomerErrors
     public static readonly Error InvalidEmail =
         Error.Validation("Customer.Validation.InvalidEmail", "Email is not a valid email address.");
 
+    public static readonly Error InvalidPhoneNumber =
+        Error.Validation("Customer.Validation.InvalidPhoneNumber", "Phone number is not in a valid format.");
+
     public static Error Required(string field) =>
         Error.Validation("Customer.Validation.Required", $"{field} is required.");
 

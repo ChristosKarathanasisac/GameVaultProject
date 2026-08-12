@@ -62,6 +62,18 @@ public sealed class UpdateCustomerHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ReturnsValidationFailure_WhenPhoneNumberFormatIsInvalid()
+    {
+        var id = Guid.NewGuid();
+        var request = new UpdateCustomerRequest("Alice", "Smith", "not-a-phone");
+
+        var result = await _handler.HandleAsync(id, id, request);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(CustomerErrors.InvalidPhoneNumber, result.Error);
+    }
+
+    [Fact]
     public async Task HandleAsync_NeverQueriesRepository_WhenValidationFails()
     {
         var id = Guid.NewGuid();
