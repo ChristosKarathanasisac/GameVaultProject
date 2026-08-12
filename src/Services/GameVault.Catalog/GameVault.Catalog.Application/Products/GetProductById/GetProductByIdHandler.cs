@@ -1,6 +1,7 @@
 using GameVault.Catalog.Application.Abstractions;
-using GameVault.Catalog.Domain.Exceptions;
+using GameVault.Catalog.Application.Errors;
 using GameVault.Contracts.Responses.Catalog;
+using GameVault.SharedKernel.Results;
 
 namespace GameVault.Catalog.Application.Products.GetProductById;
 
@@ -13,12 +14,12 @@ public sealed class GetProductByIdHandler : IGetProductByIdHandler
         _repository = repository;
     }
 
-    public async Task<GameResponse> HandleAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Result<GameResponse>> HandleAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var product = await _repository.GetByIdAsync(id, cancellationToken);
 
         if (product is null)
-            throw new ProductNotFoundException(id);
+            return CatalogErrors.ProductNotFound;
 
         return product.ToGameResponse();
     }

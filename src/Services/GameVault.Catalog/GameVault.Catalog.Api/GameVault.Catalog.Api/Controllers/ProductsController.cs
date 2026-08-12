@@ -29,6 +29,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _getByIdHandler.HandleAsync(id, cancellationToken);
-        return Ok(result);
+        return result.ToActionResult(Ok);
     }
 }
