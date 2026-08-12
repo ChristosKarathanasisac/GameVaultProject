@@ -71,6 +71,21 @@ public sealed class CatalogApiFactory : WebApplicationFactory<Program>, IAsyncLi
         return product.Id;
     }
 
+    public async Task<Guid> SeedReservationAsync(Guid productId, Guid orderId, int quantity)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+
+        var stock = await db.Stock.FirstAsync(s => s.ProductId == productId);
+        stock.Decrease(quantity);
+
+        var reservation = StockReservation.Reserve(productId, orderId, quantity, DateTime.UtcNow.AddMinutes(15));
+        await db.StockReservations.AddAsync(reservation);
+        await db.SaveChangesAsync();
+
+        return reservation.Id;
+    }
+
     public async Task<int> GetAvailableStockAsync(Guid productId)
     {
         using var scope = Services.CreateScope();

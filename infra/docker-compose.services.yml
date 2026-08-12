@@ -18,6 +18,37 @@ services:
     networks:
       - gamevault-network
 
+  catalog-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-catalog-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - catalog-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      - catalog-api
+    network_mode: "service:catalog-api"
+
   customer-api:
     build:
       context: ../src

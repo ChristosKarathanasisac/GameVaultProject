@@ -11,7 +11,8 @@ Client
 GameVault.WebEdge.Api   ← YARP reverse proxy / API gateway
   │                       Handles authentication at the edge
   ├──► GameVault.Catalog.Api    (game catalog)
-  └──► GameVault.Customer.Api   (customer management)
+  ├──► GameVault.Customer.Api   (customer management)
+  └──► GameVault.Order.Api      (order processing)
 
 Inter-service communication: DAPR (pub/sub + service invocation)
 Identity: Keycloak (OIDC / JWT Bearer)
@@ -42,15 +43,16 @@ Shared building blocks live in `src/SharedLibraries/GameVault.Common`:
 
 | Service | Port | Description |
 |---|---|---|
-| `GameVault.WebEdge.Api` | `5000` | API gateway — routes `/catalog/**` and `/customers/**` |
-| `GameVault.Catalog.Api` | `5007` | Game catalog management |
+| `GameVault.WebEdge.Api` | `5000` | API gateway — routes public catalog and customer endpoints |
+| `GameVault.Catalog.Api` | `5007` | Game catalog — products and internal stock reservation endpoints |
 | `GameVault.Customer.Api` | `5008` | Customer management, Keycloak integration |
+| `GameVault.Order.Api` | `5009` | Order processing, invokes Catalog reservation endpoints via DAPR |
 
 ## Gateway Routing Conventions
 
 `GameVault.WebEdge.Api`'s YARP routes wire each service differently on purpose — this is not an inconsistency to fix:
 
-- **Catalog**: the `/catalog/{**catch-all}` route strips the `/catalog` prefix (`PathRemovePrefix`) before forwarding, so `ProductsController` needs its own `api/[controller]` prefix (`api/Products`) to match what actually arrives. Public URL: `/catalog/api/Products/{id}`.
+- **Catalog (public)**: two explicit GET-only routes proxy `GET /catalog/api/products` and `GET /catalog/api/products/{id}`, stripping the `/catalog` prefix before forwarding. Reservation endpoints (`POST /api/products/{id}/reservations`, `POST /api/orders/.../confirm`, `POST /api/orders/.../release`) have **no matching YARP route** — they are reachable only through the DAPR sidecar and are never exposed externally.
 - **Customer**: the `/customers/{**catch-all}` route has no transform at all — the path is forwarded unchanged, so `CustomersController` uses a plain `[controller]` route (`Customers`) to match. Public URL: `/customers/{id}`.
 
 Making both controllers share one route-attribute convention would require either copying Catalog's redundant `/api` segment into Customer's public URLs (`/customers/api/Customers/{id}`) or simplifying Catalog's gateway wiring instead (a change to the template service, not Customer). Neither is worth it just to make the two `[Route(...)]` attributes read the same — each is correct for its own gateway route.
@@ -118,7 +120,8 @@ GameVaultEnviroment/
     │   └── GameVault.WebEdge.Api/
     ├── Services/
     │   ├── GameVault.Catalog/              ← reference implementation
-    │   └── GameVault.Customer/
+    │   ├── GameVault.Customer/
+    │   └── GameVault.Order/
     └── SharedLibraries/
         └── GameVault.Common/
 ```
@@ -136,11 +139,13 @@ Each service has two test projects under `tests/`:
 
 **Running unit tests** (no Docker required):
 ```bash
+dotnet test src/Services/GameVault.Catalog/tests/GameVault.Catalog.UnitTests
 dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.UnitTests
 ```
 
 **Running integration tests** (Docker Desktop must be running):
 ```bash
+dotnet test src/Services/GameVault.Catalog/tests/GameVault.Catalog.IntegrationTests
 dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.IntegrationTests
 ```
 
