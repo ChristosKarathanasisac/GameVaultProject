@@ -88,4 +88,36 @@ public sealed class CustomerTests
         Assert.Equal(id, customer.Id);
         Assert.Equal("alice@example.com", customer.Email);
     }
+
+    [Fact]
+    public void Reactivate_ClearsDeletedState()
+    {
+        var customer = CustomerEntity.Create(Guid.NewGuid(), "alice@example.com", "Alice", "Smith", null);
+        customer.SoftDelete();
+        var beforeReactivate = DateTime.UtcNow;
+
+        customer.Reactivate();
+
+        Assert.False(customer.IsDeleted);
+        Assert.Null(customer.DeletedAt);
+        Assert.True(customer.UpdatedAt >= beforeReactivate);
+    }
+
+    [Fact]
+    public void Reactivate_PreservesIdentityAndProfileData()
+    {
+        var id = Guid.NewGuid();
+        var customer = CustomerEntity.Create(id, "alice@example.com", "Alice", "Smith", "+1234567890");
+        var originalCreatedAt = customer.CreatedAt;
+        customer.SoftDelete();
+
+        customer.Reactivate();
+
+        Assert.Equal(id, customer.Id);
+        Assert.Equal("alice@example.com", customer.Email);
+        Assert.Equal("Alice", customer.FirstName);
+        Assert.Equal("Smith", customer.LastName);
+        Assert.Equal("+1234567890", customer.PhoneNumber);
+        Assert.Equal(originalCreatedAt, customer.CreatedAt);
+    }
 }

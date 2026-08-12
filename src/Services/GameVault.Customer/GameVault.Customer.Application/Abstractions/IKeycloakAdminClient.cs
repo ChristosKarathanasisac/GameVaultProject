@@ -11,5 +11,13 @@ public interface IKeycloakAdminClient
         string lastName,
         CancellationToken cancellationToken = default);
 
+    Task<Result<Unit>> ReactivateUserAsync(
+        Guid userId,
+        string email,
+        string password,
+        string firstName,
+        string lastName,
+        CancellationToken cancellationToken = default);
+
     Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default);
 }

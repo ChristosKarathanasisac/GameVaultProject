@@ -95,6 +95,51 @@ public sealed class KeycloakAdminClient : IKeycloakAdminClient
         return DefaultRejectionMessage;
     }
 
+    public async Task<Result<Unit>> ReactivateUserAsync(
+        Guid userId,
+        string email,
+        string password,
+        string firstName,
+        string lastName,
+        CancellationToken cancellationToken = default)
+    {
+        var token = await GetAdminTokenAsync(cancellationToken);
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"/admin/realms/{_options.Realm}/users");
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Content = JsonContent.Create(new
+        {
+            id = userId,
+            username = email,
+            email,
+            firstName,
+            lastName,
+            enabled = true,
+            credentials = new[]
+            {
+                new { type = "password", value = password, temporary = false }
+            }
+        });
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.Conflict)
+            return CustomerErrors.ReactivationConflict;
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var detail = await ReadKeycloakErrorMessageAsync(response, cancellationToken);
+            return CustomerErrors.RegistrationRejectedByKeycloak(detail);
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        return Unit.Value;
+    }
+
     public async Task DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var token = await GetAdminTokenAsync(cancellationToken);

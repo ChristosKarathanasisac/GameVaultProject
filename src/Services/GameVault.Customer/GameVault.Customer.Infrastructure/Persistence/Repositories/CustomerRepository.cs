@@ -20,6 +20,12 @@ public sealed class CustomerRepository : ICustomerRepository
             .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
     }
 
+    public async Task<CustomerEntity?> GetDeletedByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await _context.Customers
+            .FirstOrDefaultAsync(c => c.Email == email && c.IsDeleted, cancellationToken);
+    }
+
     public async Task AddAsync(CustomerEntity customer, CancellationToken cancellationToken = default)
     {
         await _context.Customers.AddAsync(customer, cancellationToken);

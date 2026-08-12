@@ -2,6 +2,7 @@ using GameVault.Contracts.Requests.Customer;
 using GameVault.Core.Extensions;
 using GameVault.Customer.Application.Customers.Delete;
 using GameVault.Customer.Application.Customers.GetById;
+using GameVault.Customer.Application.Customers.Reactivate;
 using GameVault.Customer.Application.Customers.Register;
 using GameVault.Customer.Application.Customers.Update;
 using Microsoft.AspNetCore.Authorization;
@@ -17,17 +18,20 @@ public class CustomersController : ControllerBase
     private readonly IGetCustomerByIdHandler _getByIdHandler;
     private readonly IUpdateCustomerHandler _updateHandler;
     private readonly IDeleteCustomerHandler _deleteHandler;
+    private readonly IReactivateCustomerHandler _reactivateHandler;
 
     public CustomersController(
         IRegisterCustomerHandler registerHandler,
         IGetCustomerByIdHandler getByIdHandler,
         IUpdateCustomerHandler updateHandler,
-        IDeleteCustomerHandler deleteHandler)
+        IDeleteCustomerHandler deleteHandler,
+        IReactivateCustomerHandler reactivateHandler)
     {
         _registerHandler = registerHandler;
         _getByIdHandler = getByIdHandler;
         _updateHandler = updateHandler;
         _deleteHandler = deleteHandler;
+        _reactivateHandler = reactivateHandler;
     }
 
     [HttpPost("register")]
@@ -36,6 +40,14 @@ public class CustomersController : ControllerBase
     {
         var result = await _registerHandler.HandleAsync(request, cancellationToken);
         return result.ToActionResult(id => CreatedAtAction(nameof(GetById), new { id }, null));
+    }
+
+    [HttpPost("reactivate")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Reactivate([FromBody] ReactivateCustomerRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _reactivateHandler.HandleAsync(request, cancellationToken);
+        return result.ToActionResult(_ => NoContent());
     }
 
     [HttpGet("{id:guid}")]
