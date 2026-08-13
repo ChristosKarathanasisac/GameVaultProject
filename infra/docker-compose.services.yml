@@ -46,7 +46,10 @@ services:
     volumes:
       - ./dapr:/dapr:ro
     depends_on:
-      - catalog-api
+      catalog-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     network_mode: "service:catalog-api"
 
   customer-api:
@@ -97,7 +100,10 @@ services:
     volumes:
       - ./dapr:/dapr:ro
     depends_on:
-      - customer-api
+      customer-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     network_mode: "service:customer-api"
 
   order-api:
@@ -148,7 +154,10 @@ services:
     volumes:
       - ./dapr:/dapr:ro
     depends_on:
-      - order-api
+      order-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     network_mode: "service:order-api"
 
   notifications-api:
@@ -192,7 +201,10 @@ services:
     volumes:
       - ./dapr:/dapr:ro
     depends_on:
-      - notifications-api
+      notifications-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     network_mode: "service:notifications-api"
 
   webedge-api:
