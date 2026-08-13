@@ -1,7 +1,7 @@
 using GameVault.Core.Extensions;
+using GameVault.WebEdge.Api.Auth;
 using GameVault.WebEdge.Api.OpenApi;
 using Serilog;
-using Yarp.ReverseProxy.Configuration;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -17,9 +17,7 @@ try
         config.ReadFrom.Configuration(ctx.Configuration)
               .ReadFrom.Services(services));
 
-    var keycloakBaseUrl = builder.Configuration["Keycloak:BaseUrl"];
-    var keycloakRealm = builder.Configuration["Keycloak:Realm"];
-
+    builder.Services.Configure<KeycloakOptions>(builder.Configuration.GetSection(KeycloakOptions.SectionName));
     builder.Services.AddKeycloakAuthentication(builder.Configuration, builder.Environment);
     builder.Services.AddCorrelationId();
     builder.Services.AddHttpClient();
@@ -27,36 +25,7 @@ try
     builder.Services.AddSingleton<GatewayOpenApiAggregator>();
 
     builder.Services.AddReverseProxy()
-        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
-        .LoadFromMemory(
-            routes:
-            [
-                new RouteConfig
-                {
-                    RouteId = "keycloak-token-route",
-                    ClusterId = "keycloak-cluster",
-                    AuthorizationPolicy = "Anonymous",
-                    Match = new RouteMatch { Path = "/auth/token" },
-                    Transforms =
-                    [
-                        new Dictionary<string, string>
-                        {
-                            ["PathSet"] = $"/realms/{keycloakRealm}/protocol/openid-connect/token"
-                        }
-                    ]
-                }
-            ],
-            clusters:
-            [
-                new ClusterConfig
-                {
-                    ClusterId = "keycloak-cluster",
-                    Destinations = new Dictionary<string, DestinationConfig>
-                    {
-                        ["destination1"] = new DestinationConfig { Address = keycloakBaseUrl! }
-                    }
-                }
-            ]);
+        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
     var app = builder.Build();
 
@@ -75,6 +44,7 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
+    app.MapAuthEndpoints();
     app.MapReverseProxy();
 
     app.Run();

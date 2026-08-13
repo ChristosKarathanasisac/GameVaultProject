@@ -212,6 +212,8 @@ services:
       Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
       Keycloak__BaseUrl: "${KEYCLOAK_BASE_URL}"
       Keycloak__Realm: "${KEYCLOAK_REALM}"
+      Keycloak__ClientId: "${KEYCLOAK_CLIENT_ID}"
+      Keycloak__ClientSecret: "${KEYCLOAK_CLIENT_SECRET}"
       OpenApiAggregation__Services__0__OpenApiUrl: "http://catalog-api:8080/openapi/v1.json"
       OpenApiAggregation__Services__1__OpenApiUrl: "http://customer-api:8080/openapi/v1.json"
       OpenApiAggregation__Services__2__OpenApiUrl: "http://order-api:8080/openapi/v1.json"
