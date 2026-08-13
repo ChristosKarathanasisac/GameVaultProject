@@ -21,11 +21,11 @@ RUN --mount=type=cache,id=nuget-notifications,target=/root/.nuget/packages \
 COPY . .
 WORKDIR "/src/Services/GameVault.Notifications/GameVault.Notifications.Api/GameVault.Notifications.Api"
 RUN --mount=type=cache,id=nuget-notifications,target=/root/.nuget/packages \
-    dotnet build "GameVault.Notifications.Api.csproj" -c Debug -o /app/build --no-restore
+    dotnet build "GameVault.Notifications.Api.csproj" -c Debug -o /app/build
 
 FROM build AS publish
 RUN --mount=type=cache,id=nuget-notifications,target=/root/.nuget/packages \
-    dotnet publish "GameVault.Notifications.Api.csproj" -c Debug -o /app/publish --no-restore /p:UseAppHost=false
+    dotnet publish "GameVault.Notifications.Api.csproj" -c Debug -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app

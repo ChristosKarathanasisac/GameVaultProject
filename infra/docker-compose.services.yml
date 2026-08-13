@@ -207,11 +207,14 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address: "http://catalog-api:8080/"
       ReverseProxy__Clusters__customer-cluster__Destinations__destination1__Address: "http://customer-api:8080/"
+      ReverseProxy__Clusters__order-cluster__Destinations__destination1__Address: "http://order-api:8080/"
       Authentication__Authority: "${KEYCLOAK_AUTHORITY}"
       Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
       Keycloak__BaseUrl: "${KEYCLOAK_BASE_URL}"
       Keycloak__Realm: "${KEYCLOAK_REALM}"
-      ReverseProxy__Clusters__order-cluster__Destinations__destination1__Address: "http://order-api:8080/"
+      OpenApiAggregation__Services__0__OpenApiUrl: "http://catalog-api:8080/openapi/v1.json"
+      OpenApiAggregation__Services__1__OpenApiUrl: "http://customer-api:8080/openapi/v1.json"
+      OpenApiAggregation__Services__2__OpenApiUrl: "http://order-api:8080/openapi/v1.json"
       Serilog__WriteTo__1__Name: "Seq"
       Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
     depends_on:

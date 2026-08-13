@@ -1,4 +1,5 @@
 using GameVault.Core.Extensions;
+using GameVault.WebEdge.Api.OpenApi;
 using Serilog;
 using Yarp.ReverseProxy.Configuration;
 
@@ -21,6 +22,9 @@ try
 
     builder.Services.AddKeycloakAuthentication(builder.Configuration, builder.Environment);
     builder.Services.AddCorrelationId();
+    builder.Services.AddHttpClient();
+    builder.Services.Configure<GatewayOpenApiOptions>(builder.Configuration.GetSection("OpenApiAggregation"));
+    builder.Services.AddSingleton<GatewayOpenApiAggregator>();
 
     builder.Services.AddReverseProxy()
         .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -55,6 +59,15 @@ try
             ]);
 
     var app = builder.Build();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapGet("/openapi/v1.json", async (GatewayOpenApiAggregator aggregator, CancellationToken ct) =>
+        {
+            var doc = await aggregator.AggregateAsync(ct);
+            return Results.Json(doc);
+        }).ExcludeFromDescription();
+    }
 
     app.UseCorrelationId();
     app.UseSerilogRequestLogging();
