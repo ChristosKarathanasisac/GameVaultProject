@@ -7,12 +7,8 @@
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Application/GameVault.Catalog.Application.csproj" />
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj" />
     <Project Path="src/Services/GameVault.Catalog/GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj" />
-    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.UnitTests/GameVault.Catalog.UnitTests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
-    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.IntegrationTests/GameVault.Catalog.IntegrationTests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.UnitTests/GameVault.Catalog.UnitTests.csproj" />
+    <Project Path="src/Services/GameVault.Catalog/tests/GameVault.Catalog.IntegrationTests/GameVault.Catalog.IntegrationTests.csproj" />
   </Folder>
   <Folder Name="/Customer/">
     <Project Path="src/Services/GameVault.Customer/GameVault.Customer.Api/GameVault.Customer.Api/GameVault.Customer.Api.csproj" />
@@ -35,12 +31,8 @@
     <Project Path="src/Services/GameVault.Notifications/GameVault.Notifications.Application/GameVault.Notifications.Application.csproj" />
     <Project Path="src/Services/GameVault.Notifications/GameVault.Notifications.Domain/GameVault.Notifications.Domain.csproj" />
     <Project Path="src/Services/GameVault.Notifications/GameVault.Notifications.Infrastructure/GameVault.Notifications.Infrastructure.csproj" />
-    <Project Path="src/Services/GameVault.Notifications/tests/GameVault.Notifications.UnitTests/GameVault.Notifications.UnitTests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
-    <Project Path="src/Services/GameVault.Notifications/tests/GameVault.Notifications.IntegrationTests/GameVault.Notifications.IntegrationTests.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="src/Services/GameVault.Notifications/tests/GameVault.Notifications.UnitTests/GameVault.Notifications.UnitTests.csproj" />
+    <Project Path="src/Services/GameVault.Notifications/tests/GameVault.Notifications.IntegrationTests/GameVault.Notifications.IntegrationTests.csproj" />
   </Folder>
   <Folder Name="/SharedLibraries/">
     <Project Path="src/SharedLibraries/GameVault.Common/GameVault.Contracts/GameVault.Contracts.csproj" />
