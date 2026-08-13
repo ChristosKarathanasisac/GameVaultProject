@@ -1,5 +1,6 @@
 using GameVault.Order.Application.Abstractions;
 using GameVault.Order.Infrastructure.Catalog;
+using GameVault.Order.Infrastructure.Events;
 using GameVault.Order.Infrastructure.Payment;
 using GameVault.Order.Infrastructure.Persistence;
 using GameVault.Order.Infrastructure.Persistence.Repositories;
@@ -27,6 +28,13 @@ public static class DependencyInjection
 
         services.AddSingleton<Random>();
         services.AddScoped<IPaymentGateway, MockedPaymentGateway>();
+
+        services.AddHttpClient(EventPublisherConsts.DaprHttpClientName, client =>
+        {
+            var daprPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT") ?? "3500";
+            client.BaseAddress = new Uri($"http://127.0.0.1:{daprPort}");
+        });
+        services.AddScoped<IEventPublisher, DaprEventPublisher>();
 
         return services;
     }

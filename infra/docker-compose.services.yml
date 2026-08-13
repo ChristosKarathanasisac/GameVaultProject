@@ -151,6 +151,50 @@ services:
       - order-api
     network_mode: "service:order-api"
 
+  notifications-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Notifications/GameVault.Notifications.Api/Dockerfile
+    image: gamevault/notifications-api:latest
+    container_name: gamevault-notifications-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    networks:
+      - gamevault-network
+
+  notifications-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-notifications-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - notifications-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      - notifications-api
+    network_mode: "service:notifications-api"
+
   webedge-api:
     build:
       context: ../src

@@ -1,3 +1,4 @@
+using GameVault.Contracts.Events.Order;
 using GameVault.Contracts.Responses.Order;
 using GameVault.Order.Application.Abstractions;
 using GameVault.Order.Application.Errors;
@@ -15,6 +16,7 @@ public sealed class PayOrderHandler : IPayOrderHandler
     private readonly IPaymentGateway _paymentGateway;
     private readonly ICatalogClient _catalogClient;
     private readonly IOrderCompensationService _compensationService;
+    private readonly IEventPublisher _eventPublisher;
     private readonly ILogger<PayOrderHandler> _logger;
 
     public PayOrderHandler(
@@ -22,12 +24,14 @@ public sealed class PayOrderHandler : IPayOrderHandler
         IPaymentGateway paymentGateway,
         ICatalogClient catalogClient,
         IOrderCompensationService compensationService,
+        IEventPublisher eventPublisher,
         ILogger<PayOrderHandler> logger)
     {
         _orderRepository = orderRepository;
         _paymentGateway = paymentGateway;
         _catalogClient = catalogClient;
         _compensationService = compensationService;
+        _eventPublisher = eventPublisher;
         _logger = logger;
     }
 
@@ -52,6 +56,25 @@ public sealed class PayOrderHandler : IPayOrderHandler
             {
                 order.MarkPaid();
                 await _orderRepository.SaveChangesAsync(cancellationToken);
+
+                // The publish and the database save are not in the same transaction, so it is
+                // possible for an order to end up Paid with no notification ever delivered if
+                // RabbitMQ is down and all retries are exhausted. A proper fix would be a
+                // transactional outbox, which is out of scope for Phase 1 (see TargetState.md's
+                // Phase 5 stretch goals) — this is a deliberate, documented trade-off.
+                try
+                {
+                    await _eventPublisher.PublishOrderCompletedAsync(
+                        new OrderCompletedEvent(order.Id, order.CustomerId, order.TotalAmount, order.UpdatedAt),
+                        cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Failed to publish OrderCompletedEvent for order {OrderId} (customer {CustomerId}, total {TotalAmount}) — order remains Paid but notification was not delivered",
+                        order.Id, order.CustomerId, order.TotalAmount);
+                }
+
                 return order.ToOrderResponse();
             }
         }

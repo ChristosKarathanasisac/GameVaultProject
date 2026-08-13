@@ -8,11 +8,16 @@ A microservices-based game store platform built on .NET 10, following Clean Arch
 Client
   │
   ▼
-GameVault.WebEdge.Api   ← YARP reverse proxy / API gateway
-  │                       Handles authentication at the edge
-  ├──► GameVault.Catalog.Api    (game catalog)
-  ├──► GameVault.Customer.Api   (customer management)
-  └──► GameVault.Order.Api      (order processing)
+GameVault.WebEdge.Api      ← YARP reverse proxy / API gateway
+  │                           Handles authentication at the edge
+  ├──► GameVault.Catalog.Api         (game catalog)
+  ├──► GameVault.Customer.Api        (customer management)
+  └──► GameVault.Order.Api           (order processing)
+              │
+              │  Dapr pub/sub (RabbitMQ)
+              │  topic: order-completed
+              ▼
+       GameVault.Notifications.Api   (async event consumer — log only)
 
 Inter-service communication: DAPR (pub/sub + service invocation)
 Identity: Keycloak (OIDC / JWT Bearer)
@@ -47,6 +52,17 @@ Shared building blocks live in `src/SharedLibraries/GameVault.Common`:
 | `GameVault.Catalog.Api` | `5007` | Game catalog — products and internal stock reservation endpoints |
 | `GameVault.Customer.Api` | `5008` | Customer management, Keycloak integration |
 | `GameVault.Order.Api` | `5009` | Order processing, invokes Catalog reservation endpoints via DAPR |
+| `GameVault.Notifications.Api` | — | Async event consumer — subscribes to `order-completed` via Dapr pub/sub (RabbitMQ) and logs a structured Serilog entry to Seq. No public endpoints; no database. |
+
+## Pub/Sub Flow (Order → Notifications)
+
+When a payment succeeds, `PayOrderHandler` marks the order as `Paid`, saves it to the database, then publishes an `OrderCompletedEvent` to the `order-completed` topic on the `gamevault-pubsub` Dapr component (backed by RabbitMQ). The publish uses the Dapr sidecar's HTTP API directly (`POST /v1.0/publish/...`) via a named `IHttpClientFactory` client, with 3 retries and 200 ms fixed backoff between attempts.
+
+`GameVault.Notifications.Api` subscribes to the same topic via its Dapr sidecar. The sidecar calls `POST /notifications/order-completed` on the Notifications app, which logs one structured Serilog `Information` entry — visible in Seq alongside all other service logs.
+
+**Known gap:** the `X-Correlation-Id` from the original client request propagates through WebEdge → Order → Catalog (via `CorrelationIdMiddleware` + `CatalogClient.PropagateCorrelationId`), but breaks at the pub/sub boundary. Dapr delivers the message to Notifications as a fresh internal POST with no original client headers, so the Notifications side generates a new correlation ID. The end-to-end Seq trace is therefore two separate correlation IDs for the Order → Notifications leg. This can be closed by embedding the correlation ID in the event payload — tracked as a follow-up.
+
+**Documented trade-off:** the `SaveChangesAsync` (marking the order `Paid`) and the `PublishEventAsync` are not in the same transaction. If RabbitMQ is unreachable and all retries are exhausted, the order stays `Paid` with no notification delivered. The HTTP response to the client is unaffected — the payment is not rolled back. A transactional outbox would close this gap and is flagged as a Phase 5 stretch goal.
 
 ## Gateway Routing Conventions
 
@@ -87,7 +103,7 @@ There is no distributed transaction across a service's own database and another 
 | Runtime | .NET 10 |
 | Database | PostgreSQL 16 + EF Core 10 (`Npgsql`) |
 | API Gateway | YARP 2.2 |
-| Inter-service comms | DAPR 1.17 (sidecar model) |
+| Inter-service comms | DAPR 1.17 (sidecar model) — service invocation (sync) + pub/sub via RabbitMQ (async) |
 | Identity | Keycloak 26.2 (OIDC / JWT Bearer) |
 | Logging | Serilog → Seq |
 | Testing | xUnit + NSubstitute + Testcontainers |
@@ -116,6 +132,7 @@ Key local endpoints:
 | API Gateway | http://localhost:5000 |
 | Seq (log UI) | http://localhost:5380 |
 | Keycloak | http://localhost:8180 |
+| RabbitMQ (management UI) | http://localhost:15672 (guest / guest) |
 
 ## Solution Structure
 
@@ -129,7 +146,8 @@ GameVaultEnviroment/
     ├── Services/
     │   ├── GameVault.Catalog/              ← reference implementation
     │   ├── GameVault.Customer/
-    │   └── GameVault.Order/
+    │   ├── GameVault.Order/
+    │   └── GameVault.Notifications/
     └── SharedLibraries/
         └── GameVault.Common/
 ```
@@ -150,6 +168,7 @@ Each service has two test projects under `tests/`:
 dotnet test src/Services/GameVault.Catalog/tests/GameVault.Catalog.UnitTests
 dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.UnitTests
 dotnet test src/Services/GameVault.Order/tests/GameVault.Order.UnitTests
+dotnet test src/Services/GameVault.Notifications/tests/GameVault.Notifications.UnitTests
 ```
 
 **Running integration tests** (Docker Desktop must be running):
@@ -157,6 +176,7 @@ dotnet test src/Services/GameVault.Order/tests/GameVault.Order.UnitTests
 dotnet test src/Services/GameVault.Catalog/tests/GameVault.Catalog.IntegrationTests
 dotnet test src/Services/GameVault.Customer/tests/GameVault.Customer.IntegrationTests
 dotnet test src/Services/GameVault.Order/tests/GameVault.Order.IntegrationTests
+dotnet test src/Services/GameVault.Notifications/tests/GameVault.Notifications.IntegrationTests
 ```
 
 Integration tests spin up a dedicated PostgreSQL container per test run, apply migrations automatically, and tear the container down when done. See `CLAUDE.md §7b` for the full authoring guide.

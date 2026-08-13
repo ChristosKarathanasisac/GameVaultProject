@@ -1,6 +1,7 @@
 using GameVault.Order.Application.Abstractions;
 using GameVault.Order.Application.Payments;
 using GameVault.Order.IntegrationTests.Auth;
+using GameVault.Order.Infrastructure.Events;
 using GameVault.Order.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -28,6 +29,7 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
 
     public ICatalogClient CatalogClientMock { get; } = Substitute.For<ICatalogClient>();
     public IPaymentGateway PaymentGatewayMock { get; } = Substitute.For<IPaymentGateway>();
+    public IEventPublisher EventPublisherMock { get; } = Substitute.For<IEventPublisher>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -36,6 +38,7 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
             ReplaceDatabase(services);
             ReplaceCatalogClient(services);
             ReplacePaymentGateway(services);
+            ReplaceEventPublisher(services);
             ReplaceAuthentication(services);
         });
     }
@@ -74,6 +77,18 @@ public sealed class OrderApiFactory : WebApplicationFactory<Program>, IAsyncLife
             services.Remove(d);
 
         services.AddSingleton(PaymentGatewayMock);
+    }
+
+    private void ReplaceEventPublisher(IServiceCollection services)
+    {
+        var descriptors = services
+            .Where(d => d.ServiceType == typeof(IEventPublisher))
+            .ToList();
+
+        foreach (var d in descriptors)
+            services.Remove(d);
+
+        services.AddSingleton(EventPublisherMock);
     }
 
     private static void ReplaceAuthentication(IServiceCollection services)

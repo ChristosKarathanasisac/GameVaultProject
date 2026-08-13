@@ -1,3 +1,4 @@
+using GameVault.Contracts.Events.Order;
 using GameVault.Contracts.Responses.Catalog;
 using GameVault.Order.Application.Abstractions;
 using GameVault.Order.Application.Errors;
@@ -8,6 +9,7 @@ using GameVault.Order.Domain.Enums;
 using GameVault.SharedKernel.Results;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using OrderEntity = global::GameVault.Order.Domain.Entities.Order;
 
 namespace GameVault.Order.UnitTests.Application;
@@ -18,12 +20,15 @@ public sealed class PayOrderHandlerTests
     private readonly IPaymentGateway _paymentGateway = Substitute.For<IPaymentGateway>();
     private readonly ICatalogClient _catalogClient = Substitute.For<ICatalogClient>();
     private readonly IOrderCompensationService _compensationService = Substitute.For<IOrderCompensationService>();
+    private readonly IEventPublisher _eventPublisher = Substitute.For<IEventPublisher>();
     private readonly ILogger<PayOrderHandler> _logger = Substitute.For<ILogger<PayOrderHandler>>();
     private readonly PayOrderHandler _handler;
 
     public PayOrderHandlerTests()
     {
-        _handler = new PayOrderHandler(_orderRepository, _paymentGateway, _catalogClient, _compensationService, _logger);
+        _handler = new PayOrderHandler(
+            _orderRepository, _paymentGateway, _catalogClient,
+            _compensationService, _eventPublisher, _logger);
     }
 
     // ── Order not found / ownership ───────────────────────────────────────────
@@ -206,6 +211,65 @@ public sealed class PayOrderHandlerTests
             order.Id,
             Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(productId)),
             Arg.Any<CancellationToken>());
+    }
+
+    // ── Publish step ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task HandleAsync_PublishesOrderCompletedEvent_WhenPaymentAndConfirmsSucceed()
+    {
+        var customerId = Guid.NewGuid();
+        var (order, productId) = CreateReservedOrderWithLine(customerId);
+        SetupOrderLoad(order);
+        SetupSuccessfulPayment(order.Id);
+        SetupSuccessfulConfirm(order.Id, productId);
+
+        await _handler.HandleAsync(new PayOrderCommand(order.Id, customerId));
+
+        await _eventPublisher.Received(1).PublishOrderCompletedAsync(
+            Arg.Is<OrderCompletedEvent>(e =>
+                e.OrderId == order.Id &&
+                e.CustomerId == customerId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_ReturnsSuccessAndOrderIsPaid_WhenPublishFails()
+    {
+        var customerId = Guid.NewGuid();
+        var (order, productId) = CreateReservedOrderWithLine(customerId);
+        SetupOrderLoad(order);
+        SetupSuccessfulPayment(order.Id);
+        SetupSuccessfulConfirm(order.Id, productId);
+        _eventPublisher
+            .PublishOrderCompletedAsync(Arg.Any<OrderCompletedEvent>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("Dapr sidecar unreachable"));
+
+        var result = await _handler.HandleAsync(new PayOrderCommand(order.Id, customerId));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Paid.ToString(), result.Value.Status);
+        await _eventPublisher.Received(1).PublishOrderCompletedAsync(
+            Arg.Any<OrderCompletedEvent>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_DoesNotPublish_WhenPaymentDeclined()
+    {
+        var customerId = Guid.NewGuid();
+        var (order, _) = CreateReservedOrderWithLine(customerId);
+        SetupOrderLoad(order);
+        _paymentGateway
+            .ChargeAsync(order.Id, Arg.Any<decimal>(), Arg.Any<CancellationToken>())
+            .Returns(Result<PaymentResult>.Failure(OrderErrors.PaymentDeclined));
+        _compensationService
+            .ReleaseReservationsAsync(Arg.Any<Guid>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        await _handler.HandleAsync(new PayOrderCommand(order.Id, customerId));
+
+        await _eventPublisher.DidNotReceiveWithAnyArgs()
+            .PublishOrderCompletedAsync(default!, default);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

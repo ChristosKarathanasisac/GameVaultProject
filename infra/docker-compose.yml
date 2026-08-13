@@ -115,6 +115,23 @@ services:
     networks:
       - gamevault-network
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: gamevault-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # management UI → http://localhost:15672 (guest/guest)
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - gamevault-network
+
 volumes:
   catalog-db-data:
   customer-db-data:
@@ -122,6 +139,7 @@ volumes:
   keycloak-data:
   seq-data:
   dapr-etcd-data:
+  rabbitmq-data:
 
 networks:
   gamevault-network:
