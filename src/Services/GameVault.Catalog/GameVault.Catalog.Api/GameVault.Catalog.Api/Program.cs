@@ -32,6 +32,7 @@ try
     {
         var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
         await db.Database.MigrateAsync();
+        await CatalogDataSeeder.SeedAsync(db);
     }
 
     if (app.Environment.IsDevelopment())
