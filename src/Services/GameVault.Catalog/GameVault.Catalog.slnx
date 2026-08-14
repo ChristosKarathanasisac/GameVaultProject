@@ -5,5 +5,10 @@
     <Project Path="GameVault.Catalog.Domain/GameVault.Catalog.Domain.csproj" />
     <Project Path="GameVault.Catalog.Infrastructure/GameVault.Catalog.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/GameVault.Catalog.UnitTests/GameVault.Catalog.UnitTests.csproj" />
+    <Project Path="tests/GameVault.Catalog.IntegrationTests/GameVault.Catalog.IntegrationTests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+  </Folder>
 </Solution>

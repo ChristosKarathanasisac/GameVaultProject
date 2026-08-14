@@ -1,0 +1,27 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: gamevault-pubsub
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: rabbitmq-connection-string
+        key: rabbitmq-connection-string
+    - name: durable
+      value: "true"
+    - name: deletedWhenUnused
+      value: "false"
+    - name: autoAck
+      value: "false"
+    - name: requeueInFailure
+      value: "true"
+    - name: reconnectWait
+      value: "0"
+auth:
+  secretStore: gamevault-secrets
+scopes:
+  - order-api
+  - notifications-api

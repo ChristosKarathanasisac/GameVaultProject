@@ -1,0 +1,8 @@
+apiVersion: dapr.io/v1alpha1
+kind: HTTPEndpoint
+metadata:
+  name: keycloak
+spec:
+  baseUrl: http://keycloak:8080
+scopes:
+  - customer-api

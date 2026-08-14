@@ -1,0 +1,244 @@
+services:
+
+  catalog-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Catalog/GameVault.Catalog.Api/Dockerfile
+    image: gamevault/catalog-api:latest
+    container_name: gamevault-catalog-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CatalogDb: "Host=catalog-db;Port=5432;Database=${CATALOG_DB_NAME};Username=${CATALOG_DB_USER};Password=${CATALOG_DB_PASSWORD}"
+      # Override the Seq URL — inside Docker, "localhost" won't reach Seq; use the service name instead.
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    networks:
+      - gamevault-network
+
+  catalog-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-catalog-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - catalog-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      catalog-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    network_mode: "service:catalog-api"
+
+  customer-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Customer/GameVault.Customer.Api/Dockerfile
+    image: gamevault/customer-api:latest
+    container_name: gamevault-customer-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CustomerDb: "Host=customer-db;Port=5432;Database=${CUSTOMER_DB_NAME};Username=${CUSTOMER_DB_USER};Password=${CUSTOMER_DB_PASSWORD}"
+      Authentication__Authority: "${KEYCLOAK_AUTHORITY}"
+      Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
+      Keycloak__Realm: "${KEYCLOAK_REALM}"
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      customer-db:
+        condition: service_healthy
+    networks:
+      - gamevault-network
+
+  customer-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-customer-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - customer-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      customer-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    network_mode: "service:customer-api"
+
+  order-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Order/GameVault.Order.Api/Dockerfile
+    image: gamevault/order-api:latest
+    container_name: gamevault-order-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__OrderDb: "Host=order-db;Port=5432;Database=${ORDER_DB_NAME};Username=${ORDER_DB_USER};Password=${ORDER_DB_PASSWORD}"
+      Authentication__Authority: "${KEYCLOAK_AUTHORITY}"
+      Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
+      Keycloak__Realm: "${KEYCLOAK_REALM}"
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      order-db:
+        condition: service_healthy
+    networks:
+      - gamevault-network
+
+  order-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-order-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - order-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      order-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    network_mode: "service:order-api"
+
+  notifications-api:
+    build:
+      context: ../src
+      dockerfile: Services/GameVault.Notifications/GameVault.Notifications.Api/Dockerfile
+    image: gamevault/notifications-api:latest
+    container_name: gamevault-notifications-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    networks:
+      - gamevault-network
+
+  notifications-api-dapr:
+    image: daprio/daprd:1.17.12
+    container_name: gamevault-notifications-api-dapr
+    command:
+      - ./daprd
+      - --app-id
+      - notifications-api
+      - --app-port
+      - "8080"
+      - --app-protocol
+      - http
+      - --dapr-http-port
+      - "3500"
+      - --dapr-grpc-port
+      - "50001"
+      - --log-level
+      - info
+      - --placement-host-address
+      - dapr-placement:50006
+      - --scheduler-host-address
+      - dapr-scheduler:50007
+      - --config
+      - /dapr/config.yaml
+      - --resources-path
+      - /dapr/components
+    volumes:
+      - ./dapr:/dapr:ro
+    depends_on:
+      notifications-api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    network_mode: "service:notifications-api"
+
+  webedge-api:
+    build:
+      context: ../src
+      dockerfile: Gateway/GameVault.WebEdge.Api/Dockerfile
+    image: gamevault/webedge-api:latest
+    container_name: gamevault-webedge-api
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address: "http://catalog-api:8080/"
+      ReverseProxy__Clusters__customer-cluster__Destinations__destination1__Address: "http://customer-api:8080/"
+      ReverseProxy__Clusters__order-cluster__Destinations__destination1__Address: "http://order-api:8080/"
+      Authentication__Authority: "${KEYCLOAK_AUTHORITY}"
+      Authentication__Audience: "${KEYCLOAK_AUDIENCE}"
+      Keycloak__BaseUrl: "${KEYCLOAK_BASE_URL}"
+      Keycloak__Realm: "${KEYCLOAK_REALM}"
+      Keycloak__ClientId: "${KEYCLOAK_CLIENT_ID}"
+      Keycloak__ClientSecret: "${KEYCLOAK_CLIENT_SECRET}"
+      OpenApiAggregation__Services__0__OpenApiUrl: "http://catalog-api:8080/openapi/v1.json"
+      OpenApiAggregation__Services__1__OpenApiUrl: "http://customer-api:8080/openapi/v1.json"
+      OpenApiAggregation__Services__2__OpenApiUrl: "http://order-api:8080/openapi/v1.json"
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://seq:5341"
+    depends_on:
+      - catalog-api
+      - customer-api
+      - order-api
+    networks:
+      - gamevault-network
+
+networks:
+  gamevault-network:
+    name: gamevault-network
+    external: true

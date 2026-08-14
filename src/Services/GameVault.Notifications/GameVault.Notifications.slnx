@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="GameVault.Notifications.Api/GameVault.Notifications.Api/GameVault.Notifications.Api.csproj" />
+    <Project Path="GameVault.Notifications.Application/GameVault.Notifications.Application.csproj" />
+    <Project Path="GameVault.Notifications.Domain/GameVault.Notifications.Domain.csproj" />
+    <Project Path="GameVault.Notifications.Infrastructure/GameVault.Notifications.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GameVault.Notifications.UnitTests/GameVault.Notifications.UnitTests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="tests/GameVault.Notifications.IntegrationTests/GameVault.Notifications.IntegrationTests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+  </Folder>
+</Solution>

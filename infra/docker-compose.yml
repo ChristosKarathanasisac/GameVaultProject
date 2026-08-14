@@ -1,0 +1,147 @@
+services:
+
+  seq:
+    image: datalust/seq:latest
+    container_name: gamevault-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "5341:5341"   # ingestion (Serilog posts here)
+      - "5380:80"     # web UI  →  http://localhost:5380
+    volumes:
+      - seq-data:/data
+    networks:
+      - gamevault-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: gamevault-keycloak
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "${KEYCLOAK_PORT:-8180}:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - gamevault-network
+
+  customer-db:
+    image: postgres:16
+    container_name: gamevault-customer-db
+    environment:
+      POSTGRES_USER: ${CUSTOMER_DB_USER}
+      POSTGRES_PASSWORD: ${CUSTOMER_DB_PASSWORD}
+      POSTGRES_DB: ${CUSTOMER_DB_NAME}
+    ports:
+      - "${CUSTOMER_DB_PORT}:5432"
+    volumes:
+      - customer-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CUSTOMER_DB_USER} -d ${CUSTOMER_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - gamevault-network
+
+  catalog-db:
+    image: postgres:16
+    container_name: gamevault-catalog-db
+    environment:
+      POSTGRES_USER: ${CATALOG_DB_USER}
+      POSTGRES_PASSWORD: ${CATALOG_DB_PASSWORD}
+      POSTGRES_DB: ${CATALOG_DB_NAME}
+    ports:
+      - "${CATALOG_DB_PORT}:5432"
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CATALOG_DB_USER} -d ${CATALOG_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - gamevault-network
+
+  order-db:
+    image: postgres:16
+    container_name: gamevault-order-db
+    environment:
+      POSTGRES_USER: ${ORDER_DB_USER}
+      POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD}
+      POSTGRES_DB: ${ORDER_DB_NAME}
+    ports:
+      - "${ORDER_DB_PORT}:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ORDER_DB_USER} -d ${ORDER_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - gamevault-network
+
+  dapr-placement:
+    image: daprio/placement:1.17.12
+    container_name: gamevault-dapr-placement
+    command: ["./placement", "--port", "50006", "--log-level", "info"]
+    ports:
+      - "50006:50006"
+    networks:
+      - gamevault-network
+
+  dapr-scheduler:
+    image: daprio/scheduler:1.17.12
+    container_name: gamevault-dapr-scheduler
+    command: ["./scheduler", "--port", "50007", "--etcd-data-dir", "/data"]
+    user: root
+    ports:
+      - "50007:50007"
+    volumes:
+      - dapr-etcd-data:/data
+    networks:
+      - gamevault-network
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: gamevault-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # management UI → http://localhost:15672 (guest/guest)
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - gamevault-network
+
+volumes:
+  catalog-db-data:
+  customer-db-data:
+  order-db-data:
+  keycloak-data:
+  seq-data:
+  dapr-etcd-data:
+  rabbitmq-data:
+
+networks:
+  gamevault-network:
+    name: gamevault-network
+    driver: bridge

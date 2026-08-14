@@ -1,3 +1,5 @@
+using GameVault.Catalog.Domain.Exceptions;
+
 namespace GameVault.Catalog.Domain.Entities;
 
 public sealed class Stock
@@ -18,5 +20,20 @@ public sealed class Stock
             AvailableStock = initialStock,
             UpdatedAt = DateTime.UtcNow
         };
+    }
+
+    public void Decrease(int quantity)
+    {
+        if (quantity > AvailableStock)
+            throw new InsufficientStockException(ProductId, quantity, AvailableStock);
+
+        AvailableStock -= quantity;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Increase(int quantity)
+    {
+        AvailableStock += quantity;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

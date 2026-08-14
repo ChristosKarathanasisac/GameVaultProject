@@ -1,4 +1,6 @@
+using GameVault.Catalog.Application.Abstractions;
 using GameVault.Catalog.Infrastructure.Persistence;
+using GameVault.Catalog.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,9 @@ public static class DependencyInjection
             options.UseNpgsql(
                 configuration.GetConnectionString("CatalogDb"),
                 npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "catalog")));
+
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IStockReservationRepository, StockReservationRepository>();
 
         return services;
     }

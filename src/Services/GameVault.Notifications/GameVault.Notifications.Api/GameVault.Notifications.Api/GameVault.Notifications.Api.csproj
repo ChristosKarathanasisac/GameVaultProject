@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapr.AspNetCore" Version="1.15.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\GameVault.Notifications.Infrastructure\GameVault.Notifications.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\SharedLibraries\GameVault.Common\GameVault.Core\GameVault.Core.csproj" />
+  </ItemGroup>
+
+</Project>

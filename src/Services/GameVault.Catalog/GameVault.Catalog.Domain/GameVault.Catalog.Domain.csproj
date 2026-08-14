@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../../SharedLibraries/GameVault.Common/GameVault.SharedKernel/GameVault.SharedKernel.csproj" />
+  </ItemGroup>
+
 </Project>

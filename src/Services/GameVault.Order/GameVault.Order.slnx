@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="GameVault.Order.Api/GameVault.Order.Api/GameVault.Order.Api.csproj" />
+    <Project Path="GameVault.Order.Application/GameVault.Order.Application.csproj" />
+    <Project Path="GameVault.Order.Domain/GameVault.Order.Domain.csproj" />
+    <Project Path="GameVault.Order.Infrastructure/GameVault.Order.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GameVault.Order.UnitTests/GameVault.Order.UnitTests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="tests/GameVault.Order.IntegrationTests/GameVault.Order.IntegrationTests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+  </Folder>
+</Solution>
