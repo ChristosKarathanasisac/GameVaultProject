@@ -130,6 +130,8 @@ Key local endpoints:
 | Service | URL |
 |---|---|
 | API Gateway | http://localhost:5000 |
+| API Reference (Scalar) | http://localhost:5000/scalar |
+| Aggregated OpenAPI spec | http://localhost:5000/openapi/v1.json |
 | Seq (log UI) | http://localhost:5380 |
 | Keycloak | http://localhost:8180 |
 | RabbitMQ (management UI) | http://localhost:15672 (guest / guest) |

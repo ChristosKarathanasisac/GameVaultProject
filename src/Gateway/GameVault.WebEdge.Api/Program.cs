@@ -1,6 +1,7 @@
 using GameVault.Core.Extensions;
 using GameVault.WebEdge.Api.Auth;
 using GameVault.WebEdge.Api.OpenApi;
+using Scalar.AspNetCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -36,6 +37,11 @@ try
             var doc = await aggregator.AggregateAsync(ct);
             return Results.Json(doc);
         }).ExcludeFromDescription();
+
+        app.MapScalarApiReference(options =>
+        {
+            options.OpenApiRoutePattern = "/openapi/v1.json";
+        });
     }
 
     app.UseCorrelationId();
